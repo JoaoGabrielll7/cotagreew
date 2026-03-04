@@ -203,6 +203,10 @@ body {
   grid-template-columns: 1fr;
 }
 
+.history-below {
+  margin-top: 1rem;
+}
+
 .quote-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));

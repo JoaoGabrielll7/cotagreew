@@ -142,6 +142,40 @@
   {% endif %}
 </section>
 
+{% if not current_user.is_master %}
+  <section class="card history-below">
+    <h2>Historico recente</h2>
+    {% if recent_quotes %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Rota</th>
+              <th>Frete</th>
+              <th>Modo</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in recent_quotes %}
+              <tr>
+                <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
+                <td data-label="Frete">{{ item.client_price|brl }}</td>
+                <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
+                <td data-label="Data">{{ item.created_at|display_date }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhuma cotacao registrada ainda.</p>
+    {% endif %}
+  </section>
+{% endif %}
+
 <script>
   const informedWeight = document.getElementById("informed_weight");
   const weightBlock = document.getElementById("weight_block");
