@@ -25,6 +25,7 @@ class QuoteInput:
     width_m: Decimal
     height_m: Decimal
     nf_value: Decimal
+    provided_cubage_m3: Decimal | None = None
     total_weight_kg: Decimal | None = None
     cargo_type: str | None = None
 
@@ -171,8 +172,6 @@ def _strategy_note(base_cubage: Decimal, base_weight: Decimal, base_nf: Decimal)
 def calculate_quote(data: QuoteInput) -> QuoteResult:
     if data.volumes <= 0:
         raise ValueError("A quantidade de volumes precisa ser maior que zero.")
-    if data.length_m <= 0 or data.width_m <= 0 or data.height_m <= 0:
-        raise ValueError("Dimensoes precisam ser maiores que zero.")
     if data.nf_value <= 0:
         raise ValueError("Valor da NF precisa ser maior que zero.")
 
@@ -186,8 +185,15 @@ def calculate_quote(data: QuoteInput) -> QuoteResult:
         note = None
         weight_estimated = False
 
-    cubage_unit = data.length_m * data.width_m * data.height_m
-    cubage_total = cubage_unit * Decimal(data.volumes)
+    if data.provided_cubage_m3 is not None:
+        if data.provided_cubage_m3 <= 0:
+            raise ValueError("Cubagem informada precisa ser maior que zero.")
+        cubage_total = data.provided_cubage_m3
+    else:
+        if data.length_m <= 0 or data.width_m <= 0 or data.height_m <= 0:
+            raise ValueError("Dimensoes precisam ser maiores que zero.")
+        cubage_unit = data.length_m * data.width_m * data.height_m
+        cubage_total = cubage_unit * Decimal(data.volumes)
 
     base_cubage = _round_money(cubage_total * route.cubage_per_m3)
     base_weight = _round_money(weight_total_kg * route.weight_per_kg)

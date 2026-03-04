@@ -397,9 +397,16 @@ def create_app() -> Flask:
                 destination = request.form.get("destination", "").strip()
                 volumes = int(request.form.get("volumes", "1"))
                 unit = request.form.get("unit", "m").strip().lower()
-                length = _to_decimal(request.form.get("length", "0"))
-                width = _to_decimal(request.form.get("width", "0"))
-                height = _to_decimal(request.form.get("height", "0"))
+                if unit == "m3":
+                    provided_cubage = _to_decimal(request.form.get("cubage_total", "0"))
+                    length = Decimal("1")
+                    width = Decimal("1")
+                    height = Decimal("1")
+                else:
+                    provided_cubage = None
+                    length = _to_decimal(request.form.get("length", "0"))
+                    width = _to_decimal(request.form.get("width", "0"))
+                    height = _to_decimal(request.form.get("height", "0"))
                 nf_value = _to_decimal(request.form.get("nf_value", "0"))
                 price_mode = request.form.get("price_mode", "justo").strip()
                 informed_weight = request.form.get("informed_weight", "on") == "on"
@@ -419,6 +426,7 @@ def create_app() -> Flask:
                     width_m=_to_meters(width, unit),
                     height_m=_to_meters(height, unit),
                     nf_value=nf_value,
+                    provided_cubage_m3=provided_cubage,
                     total_weight_kg=total_weight,
                     cargo_type=cargo_type,
                 )

@@ -33,14 +33,15 @@
           <input type="number" name="volumes" min="1" step="1" value="1" required>
         </label>
         <label>Unidade das dimensoes
-          <select name="unit">
+          <select name="unit" id="unit_mode">
             <option value="m">Metros (m)</option>
             <option value="cm">Centimetros (cm)</option>
+            <option value="m3">Cubagem direta (m3)</option>
           </select>
         </label>
       </div>
 
-      <div class="three-col">
+      <div class="three-col" id="dimension_block">
         <label>Comprimento
           <input type="number" name="length" min="0.01" step="0.01" value="1.20" required>
         </label>
@@ -49,6 +50,12 @@
         </label>
         <label>Altura
           <input type="number" name="height" min="0.01" step="0.01" value="1.00" required>
+        </label>
+      </div>
+
+      <div id="cubage_block" class="hidden">
+        <label>Cubagem total (m3)
+          <input type="number" name="cubage_total" min="0.01" step="0.01" value="2.88">
         </label>
       </div>
 
@@ -134,6 +141,9 @@
   const informedWeight = document.getElementById("informed_weight");
   const weightBlock = document.getElementById("weight_block");
   const cargoBlock = document.getElementById("cargo_block");
+  const unitMode = document.getElementById("unit_mode");
+  const dimensionBlock = document.getElementById("dimension_block");
+  const cubageBlock = document.getElementById("cubage_block");
 
   function toggleWeightMode() {
     if (informedWeight.checked) {
@@ -145,8 +155,20 @@
     }
   }
 
+  function toggleDimensionMode() {
+    if (unitMode.value === "m3") {
+      dimensionBlock.classList.add("hidden");
+      cubageBlock.classList.remove("hidden");
+    } else {
+      dimensionBlock.classList.remove("hidden");
+      cubageBlock.classList.add("hidden");
+    }
+  }
+
   informedWeight.addEventListener("change", toggleWeightMode);
+  unitMode.addEventListener("change", toggleDimensionMode);
   toggleWeightMode();
+  toggleDimensionMode();
 </script>
 {% endblock %}
 

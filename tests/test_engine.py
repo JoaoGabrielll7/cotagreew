@@ -62,6 +62,24 @@ class QuoteEngineTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             calculate_quote(data)
 
+    def test_direct_cubage_input_in_m3(self) -> None:
+        data = QuoteInput(
+            origin="Sao Paulo",
+            destination="Manaus",
+            volumes=3,
+            length_m=Decimal("0"),
+            width_m=Decimal("0"),
+            height_m=Decimal("0"),
+            provided_cubage_m3=Decimal("4.00"),
+            total_weight_kg=Decimal("100"),
+            nf_value=Decimal("10000"),
+        )
+
+        result = calculate_quote(data)
+
+        self.assertEqual(result.cubage_total_m3, Decimal("4.00"))
+        self.assertEqual(result.base_cubage, Decimal("2000.00"))
+
 
 if __name__ == "__main__":
     unittest.main()
