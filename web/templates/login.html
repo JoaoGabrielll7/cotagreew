@@ -1,0 +1,37 @@
+﻿{% extends "base.html" %}
+{% block title %}Entrar | Greew{% endblock %}
+{% block content %}
+<section class="auth-layout">
+  <div class="auth-panel">
+    <p class="kicker">Acesso restrito</p>
+    <h1>Entrar no sistema</h1>
+    <p class="muted">
+      Faca login com conta master ou usuario cadastrado para criar cotacoes.
+    </p>
+
+    <form method="post" class="card form-grid">
+      <label>Usuario
+        <input type="text" name="username" required autocomplete="username">
+      </label>
+      <label>Senha
+        <input type="password" name="password" required autocomplete="current-password">
+      </label>
+      <button class="btn btn-primary" type="submit">Entrar</button>
+    </form>
+
+    {% if master_default_warning %}
+      <p class="warning-note">
+        Credenciais master padrao ativas. Ajuste variaveis de ambiente em producao.
+      </p>
+    {% endif %}
+  </div>
+
+  <aside class="auth-aside card">
+    <h2>Primeiro acesso?</h2>
+    <p>Cadastre um operador para comecar a gerar cotacoes com historico salvo.</p>
+    <a class="btn btn-ghost" href="{{ url_for('register') }}">Cadastrar usuario</a>
+    <p class="mono small">Master: {{ master_username }}</p>
+  </aside>
+</section>
+{% endblock %}
+

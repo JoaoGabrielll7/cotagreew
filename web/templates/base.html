@@ -1,0 +1,61 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Greew Cotacao{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
+  </head>
+  <body>
+    <div class="bg-orb orb-a"></div>
+    <div class="bg-orb orb-b"></div>
+    <div class="bg-grid"></div>
+
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
+          <span class="brand-kicker">GREEW</span>
+          <span class="brand-main">Sistema de Cotacao</span>
+        </a>
+
+        {% if current_user %}
+          <nav class="nav-links">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% if current_user.is_master %}
+              <a href="{{ url_for('admin_users') }}">Usuarios</a>
+            {% endif %}
+          </nav>
+          <div class="session-pill">
+            <span>{{ current_user.name }} ({{ 'Master' if current_user.is_master else 'Operador' }})</span>
+            <form method="post" action="{{ url_for('logout') }}">
+              <button type="submit" class="btn btn-ghost btn-small">Sair</button>
+            </form>
+          </div>
+        {% else %}
+          <nav class="nav-links">
+            <a href="{{ url_for('login') }}">Entrar</a>
+            <a href="{{ url_for('register') }}">Cadastrar</a>
+          </nav>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="container page-content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>
+

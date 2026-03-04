@@ -1,0 +1,70 @@
+﻿{% extends "base.html" %}
+{% block title %}Cotacao {{ quote.quote_code }} | Greew{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="kicker">Cotacao</p>
+  <h1>{{ quote.quote_code }}</h1>
+  <p class="muted">
+    Criada por {{ quote.user_name }} ({{ quote.user_username }}) em {{ quote.created_at|display_date }}.
+  </p>
+  <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Voltar ao dashboard</a>
+</section>
+
+<section class="quote-grid">
+  <article class="card">
+    <h2>1) Dados da carga</h2>
+    <p><strong>Origem:</strong> {{ quote.origin }}</p>
+    <p><strong>Destino:</strong> {{ quote.destination }}</p>
+    <p><strong>Volumes:</strong> {{ quote.volumes }}</p>
+    <p><strong>Peso:</strong> {{ quote.weight_total_kg }} kg</p>
+    <p><strong>Cubagem:</strong> {{ quote.cubage_total_m3 }} m3</p>
+    <p><strong>Valor da NF:</strong> {{ quote.nf_value|brl }}</p>
+  </article>
+
+  <article class="card">
+    <h2>2) Calculo interno</h2>
+    <p><strong>Base cubagem:</strong> {{ internal_data.base_cubage }}</p>
+    <p><strong>Base peso:</strong> {{ internal_data.base_weight }}</p>
+    <p><strong>Base NF:</strong> {{ internal_data.base_nf }}</p>
+  </article>
+
+  <article class="card">
+    <h2>3) Medias</h2>
+    <p><strong>Media simples:</strong> {{ internal_data.average_simple }}</p>
+    <p><strong>Media ponderada:</strong> {{ internal_data.average_weighted }}</p>
+  </article>
+
+  <article class="card">
+    <h2>4) Sugestao de preco</h2>
+    <p><strong>Valor cheio:</strong> {{ internal_data.full_price }}</p>
+    <p><strong>Valor justo:</strong> {{ internal_data.fair_price }}</p>
+    <p><strong>Desconto maximo:</strong> {{ internal_data.max_discount_price }}</p>
+    <p class="muted"><strong>Analise:</strong> {{ quote.strategy_note }}</p>
+  </article>
+</section>
+
+<section class="card">
+  <h2>5) Mensagem para cliente</h2>
+  <textarea id="client_message" rows="12" readonly>{{ quote.client_message }}</textarea>
+  <div class="actions-row">
+    <button class="btn btn-primary" type="button" id="copy_btn">Copiar mensagem</button>
+    <span id="copy_status" class="muted"></span>
+  </div>
+</section>
+
+<script>
+  const copyBtn = document.getElementById("copy_btn");
+  const copyStatus = document.getElementById("copy_status");
+  const messageField = document.getElementById("client_message");
+
+  copyBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(messageField.value);
+      copyStatus.textContent = "Mensagem copiada.";
+    } catch (error) {
+      copyStatus.textContent = "Nao foi possivel copiar automaticamente.";
+    }
+  });
+</script>
+{% endblock %}
+

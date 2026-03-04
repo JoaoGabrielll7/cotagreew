@@ -1,0 +1,152 @@
+﻿{% extends "base.html" %}
+{% block title %}Dashboard | Greew{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="kicker">Operacao</p>
+  <h1>Nova cotacao</h1>
+  <p class="muted">Preencha os dados da carga para gerar calculo interno e proposta ao cliente.</p>
+</section>
+
+<section class="grid-main">
+  <article class="card">
+    <h2>Formulario</h2>
+    <form method="post" class="form-grid" id="quote-form">
+      <div class="two-col">
+        <label>Origem
+          <select name="origin" required>
+            {% for city in cities %}
+              <option value="{{ city }}" {% if city == "Sao Paulo" %}selected{% endif %}>{{ city }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Destino
+          <select name="destination" required>
+            {% for city in cities %}
+              <option value="{{ city }}" {% if city == "Belem" %}selected{% endif %}>{{ city }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="two-col">
+        <label>Volumes
+          <input type="number" name="volumes" min="1" step="1" value="1" required>
+        </label>
+        <label>Unidade das dimensoes
+          <select name="unit">
+            <option value="m">Metros (m)</option>
+            <option value="cm">Centimetros (cm)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="three-col">
+        <label>Comprimento
+          <input type="number" name="length" min="0.01" step="0.01" value="1.20" required>
+        </label>
+        <label>Largura
+          <input type="number" name="width" min="0.01" step="0.01" value="0.80" required>
+        </label>
+        <label>Altura
+          <input type="number" name="height" min="0.01" step="0.01" value="1.00" required>
+        </label>
+      </div>
+
+      <label class="switch-line">
+        <input type="checkbox" name="informed_weight" id="informed_weight" checked>
+        <span>Peso total informado</span>
+      </label>
+
+      <div id="weight_block">
+        <label>Peso total (kg)
+          <input type="number" name="weight" min="0.01" step="0.01" value="200.00">
+        </label>
+      </div>
+
+      <div id="cargo_block" class="hidden">
+        <label>Tipo de carga (estimativa de peso)
+          <select name="cargo_type">
+            <option value="Pecas industriais">Pecas industriais</option>
+            <option value="Maquinas">Maquinas</option>
+            <option value="Caixas pequenas">Caixas pequenas</option>
+            <option value="Moveis">Moveis</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="two-col">
+        <label>Valor da NF (R$)
+          <input type="number" name="nf_value" min="0.01" step="0.01" value="15000.00" required>
+        </label>
+        <label>Preco para o cliente
+          <select name="price_mode">
+            {% for mode_key, mode_label in price_modes.items() %}
+              <option value="{{ mode_key }}" {% if mode_key == "justo" %}selected{% endif %}>{{ mode_label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <button class="btn btn-primary" type="submit">Gerar cotacao</button>
+    </form>
+  </article>
+
+  <aside class="card">
+    <h2>Historico recente</h2>
+    {% if recent_quotes %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Codigo</th>
+              <th>Rota</th>
+              <th>Frete</th>
+              <th>Modo</th>
+              {% if current_user.is_master %}
+                <th>Usuario</th>
+              {% endif %}
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in recent_quotes %}
+              <tr>
+                <td><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                <td>{{ item.origin }} -> {{ item.destination }}</td>
+                <td>{{ item.client_price|brl }}</td>
+                <td>{{ price_mode_labels[item.client_price_mode] }}</td>
+                {% if current_user.is_master %}
+                  <td>{{ item.user_name }} ({{ item.user_username }})</td>
+                {% endif %}
+                <td>{{ item.created_at|display_date }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhuma cotacao registrada ainda.</p>
+    {% endif %}
+  </aside>
+</section>
+
+<script>
+  const informedWeight = document.getElementById("informed_weight");
+  const weightBlock = document.getElementById("weight_block");
+  const cargoBlock = document.getElementById("cargo_block");
+
+  function toggleWeightMode() {
+    if (informedWeight.checked) {
+      weightBlock.classList.remove("hidden");
+      cargoBlock.classList.add("hidden");
+    } else {
+      weightBlock.classList.add("hidden");
+      cargoBlock.classList.remove("hidden");
+    }
+  }
+
+  informedWeight.addEventListener("change", toggleWeightMode);
+  toggleWeightMode();
+</script>
+{% endblock %}
+

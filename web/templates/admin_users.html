@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block title %}Usuarios | Greew{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="kicker">Admin</p>
+  <h1>Usuarios cadastrados</h1>
+  <p class="muted">Somente o master pode criar e visualizar toda a base de usuarios.</p>
+</section>
+
+<section class="grid-main">
+  <article class="card">
+    <h2>Novo usuario</h2>
+    <form method="post" class="form-grid">
+      <label>Nome completo
+        <input type="text" name="name" required>
+      </label>
+      <label>Usuario
+        <input type="text" name="username" required>
+      </label>
+      <label>Senha
+        <input type="password" name="password" minlength="6" required>
+      </label>
+      <label>Confirmar senha
+        <input type="password" name="confirm_password" minlength="6" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Criar usuario</button>
+    </form>
+  </article>
+
+  <aside class="card">
+    <h2>Lista</h2>
+    {% if users %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Nome</th>
+              <th>Perfil</th>
+              <th>Criado em</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ "Master" if user.is_master else "Operador" }}</td>
+                <td>{{ user.created_at|display_date }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhum usuario cadastrado.</p>
+    {% endif %}
+  </aside>
+</section>
+{% endblock %}
+
