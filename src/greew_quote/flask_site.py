@@ -445,7 +445,7 @@ def create_app() -> Flask:
             except (ValueError, InvalidOperation) as exc:
                 flash(str(exc), "error")
 
-        recent_quotes = _list_recent_quotes(g.current_user)
+        recent_quotes = _list_recent_quotes(g.current_user) if g.current_user["is_master"] else []
         return render_template(
             "dashboard.html",
             cities=CITIES,

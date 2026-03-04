@@ -199,6 +199,10 @@ body {
   grid-template-columns: 1.35fr 1fr;
 }
 
+.grid-main.grid-single {
+  grid-template-columns: 1fr;
+}
+
 .quote-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(260px, 1fr));

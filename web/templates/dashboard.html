@@ -7,7 +7,7 @@
   <p class="muted">Preencha os dados da carga para gerar calculo interno e proposta ao cliente.</p>
 </section>
 
-<section class="grid-main">
+<section class="grid-main {% if not current_user.is_master %}grid-single{% endif %}">
   <article class="card">
     <h2>Formulario</h2>
     <form method="post" class="form-grid" id="quote-form">
@@ -105,43 +105,41 @@
     </form>
   </article>
 
-  <aside class="card">
-    <h2>Historico recente</h2>
-    {% if recent_quotes %}
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Codigo</th>
-              <th>Rota</th>
-              <th>Frete</th>
-              <th>Modo</th>
-              {% if current_user.is_master %}
-                <th>Usuario</th>
-              {% endif %}
-              <th>Data</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for item in recent_quotes %}
+  {% if current_user.is_master %}
+    <aside class="card">
+      <h2>Historico recente</h2>
+      {% if recent_quotes %}
+        <div class="table-wrap">
+          <table>
+            <thead>
               <tr>
-                <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
-                <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
-                <td data-label="Frete">{{ item.client_price|brl }}</td>
-                <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
-                {% if current_user.is_master %}
-                  <td data-label="Usuario">{{ item.user_name }} ({{ item.user_username }})</td>
-                {% endif %}
-                <td data-label="Data">{{ item.created_at|display_date }}</td>
+                <th>Codigo</th>
+                <th>Rota</th>
+                <th>Frete</th>
+                <th>Modo</th>
+                <th>Usuario</th>
+                <th>Data</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="muted">Nenhuma cotacao registrada ainda.</p>
-    {% endif %}
-  </aside>
+            </thead>
+            <tbody>
+              {% for item in recent_quotes %}
+                <tr>
+                  <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                  <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
+                  <td data-label="Frete">{{ item.client_price|brl }}</td>
+                  <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
+                  <td data-label="Usuario">{{ item.user_name }} ({{ item.user_username }})</td>
+                  <td data-label="Data">{{ item.created_at|display_date }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">Nenhuma cotacao registrada ainda.</p>
+      {% endif %}
+    </aside>
+  {% endif %}
 </section>
 
 <script>
