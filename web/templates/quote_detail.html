@@ -1,8 +1,8 @@
 ﻿{% extends "base.html" %}
-{% block title %}Cotacao {{ quote.quote_code }} | Greew{% endblock %}
+{% block title %}Cotação {{ quote.quote_code }} | Greew{% endblock %}
 {% block content %}
 <section class="page-head">
-  <p class="kicker">Cotacao</p>
+  <p class="kicker">Cotação</p>
   <h1>{{ quote.quote_code }}</h1>
   <p class="muted">
     Criada por {{ quote.user_name }} ({{ quote.user_username }}) em {{ quote.created_at|display_date }}.
@@ -22,24 +22,24 @@
   </article>
 
   <article class="card">
-    <h2>2) Calculo interno</h2>
+    <h2>2) Cálculo interno</h2>
     <p><strong>Base cubagem:</strong> {{ internal_data.base_cubage }}</p>
     <p><strong>Base peso:</strong> {{ internal_data.base_weight }}</p>
     <p><strong>Base NF:</strong> {{ internal_data.base_nf }}</p>
   </article>
 
   <article class="card">
-    <h2>3) Medias</h2>
-    <p><strong>Media simples:</strong> {{ internal_data.average_simple }}</p>
-    <p><strong>Media ponderada:</strong> {{ internal_data.average_weighted }}</p>
+    <h2>3) Médias</h2>
+    <p><strong>Média simples:</strong> {{ internal_data.average_simple }}</p>
+    <p><strong>Média ponderada:</strong> {{ internal_data.average_weighted }}</p>
   </article>
 
   <article class="card">
-    <h2>4) Sugestao de preco</h2>
+    <h2>4) Sugestão de preço</h2>
     <p><strong>Valor cheio:</strong> {{ internal_data.full_price }}</p>
     <p><strong>Valor justo:</strong> {{ internal_data.fair_price }}</p>
-    <p><strong>Desconto maximo:</strong> {{ internal_data.max_discount_price }}</p>
-    <p class="muted"><strong>Analise:</strong> {{ quote.strategy_note }}</p>
+    <p><strong>Desconto máximo:</strong> {{ internal_data.max_discount_price }}</p>
+    <p class="muted"><strong>Análise:</strong> {{ quote.strategy_note }}</p>
   </article>
 </section>
 
@@ -62,7 +62,7 @@
       await navigator.clipboard.writeText(messageField.value);
       copyStatus.textContent = "Mensagem copiada.";
     } catch (error) {
-      copyStatus.textContent = "Nao foi possivel copiar automaticamente.";
+      copyStatus.textContent = "Não foi possível copiar automaticamente.";
     }
   });
 </script>

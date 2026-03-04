@@ -26,7 +26,7 @@ CITIES = ["Sao Paulo", "Belem", "Manaus", "Macapa", "Boa Vista", "Fortaleza"]
 PRICE_MODES = {
     "cheio": "Valor cheio",
     "justo": "Valor justo (recomendado)",
-    "desconto": "Desconto maximo",
+    "desconto": "Desconto máximo",
 }
 
 
@@ -45,6 +45,46 @@ def _to_meters(value: Decimal, unit: str) -> Decimal:
     return value
 
 
+def _build_cubage_from_rows(unit: str, form: Any) -> tuple[int, Decimal]:
+    qty_list = form.getlist("volume_qty[]")
+    length_list = form.getlist("volume_length[]")
+    width_list = form.getlist("volume_width[]")
+    height_list = form.getlist("volume_height[]")
+
+    if not qty_list:
+        raise ValueError("Adicione ao menos um volume.")
+    if not (len(qty_list) == len(length_list) == len(width_list) == len(height_list)):
+        raise ValueError("Dados de volumes inconsistentes.")
+
+    total_cubage = Decimal("0")
+    total_volumes = 0
+    for idx, (qty_raw, length_raw, width_raw, height_raw) in enumerate(
+        zip(qty_list, length_list, width_list, height_list),
+        start=1,
+    ):
+        try:
+            qty = int(str(qty_raw).strip())
+        except ValueError as exc:
+            raise ValueError(f"Quantidade inválida no volume {idx}.") from exc
+        if qty <= 0:
+            raise ValueError(f"Quantidade deve ser maior que zero no volume {idx}.")
+
+        length = _to_decimal(str(length_raw))
+        width = _to_decimal(str(width_raw))
+        height = _to_decimal(str(height_raw))
+        if length <= 0 or width <= 0 or height <= 0:
+            raise ValueError(f"Dimensões devem ser maiores que zero no volume {idx}.")
+
+        length_m = _to_meters(length, unit)
+        width_m = _to_meters(width, unit)
+        height_m = _to_meters(height, unit)
+
+        total_cubage += length_m * width_m * height_m * Decimal(qty)
+        total_volumes += qty
+
+    return total_volumes, total_cubage
+
+
 def _selected_price(result: Any, mode: str) -> Decimal:
     if mode == "cheio":
         return result.full_price
@@ -55,7 +95,7 @@ def _selected_price(result: Any, mode: str) -> Decimal:
 
 def _connect() -> psycopg.Connection:
     if not DATABASE_URL:
-        raise RuntimeError("Defina DATABASE_URL com a connection string do Neon.")
+        raise RuntimeError("Defina DATABASE_URL com a string de conexão do Neon.")
     return psycopg.connect(DATABASE_URL, row_factory=dict_row)
 
 
@@ -145,13 +185,13 @@ def _create_user(name: str, username: str, password: str) -> tuple[bool, str]:
     if not clean_name:
         return False, "Informe o nome completo."
     if len(clean_user) < 3:
-        return False, "Usuario precisa ter ao menos 3 caracteres."
+        return False, "Usuário precisa ter ao menos 3 caracteres."
     if clean_user == MASTER_USERNAME:
-        return False, "Este usuario e reservado para o login master."
+        return False, "Este usuário é reservado para o login master."
     if len(password) < 6:
         return False, "Senha precisa ter ao menos 6 caracteres."
     if _query_user_by_username(clean_user):
-        return False, "Usuario ja cadastrado."
+        return False, "Usuário já cadastrado."
 
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
@@ -354,7 +394,7 @@ def create_app() -> Flask:
             password = request.form.get("password", "")
             user = _query_user_by_username(username)
             if user is None or not check_password_hash(str(user["password_hash"]), password):
-                flash("Usuario ou senha invalidos.", "error")
+                flash("Usuário ou senha inválidos.", "error")
             else:
                 session.clear()
                 session["user_id"] = int(user["id"])
@@ -373,7 +413,7 @@ def create_app() -> Flask:
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
             if password != confirm_password:
-                flash("As senhas nao conferem.", "error")
+                flash("As senhas não conferem.", "error")
             else:
                 ok, msg = _create_user(name, username, password)
                 flash(msg, "success" if ok else "error")
@@ -385,7 +425,7 @@ def create_app() -> Flask:
     @login_required
     def logout() -> Any:
         session.clear()
-        flash("Sessao encerrada.", "info")
+        flash("Sessão encerrada.", "info")
         return redirect(url_for("login"))
 
     @app.route("/dashboard", methods=["GET", "POST"])
@@ -395,18 +435,23 @@ def create_app() -> Flask:
             try:
                 origin = request.form.get("origin", "").strip()
                 destination = request.form.get("destination", "").strip()
-                volumes = int(request.form.get("volumes", "1"))
                 unit = request.form.get("unit", "m").strip().lower()
+                if unit not in {"m", "cm", "m3"}:
+                    raise ValueError("Unidade de dimensões inválida.")
+
                 if unit == "m3":
                     provided_cubage = _to_decimal(request.form.get("cubage_total", "0"))
-                    length = Decimal("1")
-                    width = Decimal("1")
-                    height = Decimal("1")
+                    volumes = int(request.form.get("volumes_m3", "1"))
+                    if provided_cubage <= 0:
+                        raise ValueError("Cubagem total deve ser maior que zero.")
+                    if volumes <= 0:
+                        raise ValueError("Volumes totais devem ser maiores que zero.")
                 else:
-                    provided_cubage = None
-                    length = _to_decimal(request.form.get("length", "0"))
-                    width = _to_decimal(request.form.get("width", "0"))
-                    height = _to_decimal(request.form.get("height", "0"))
+                    volumes, provided_cubage = _build_cubage_from_rows(unit, request.form)
+
+                length = Decimal("1")
+                width = Decimal("1")
+                height = Decimal("1")
                 nf_value = _to_decimal(request.form.get("nf_value", "0"))
                 price_mode = request.form.get("price_mode", "justo").strip()
                 informed_weight = request.form.get("informed_weight", "on") == "on"
@@ -440,7 +485,7 @@ def create_app() -> Flask:
                     client_price=client_price,
                     client_message=client_message,
                 )
-                flash(f"Cotacao {result.quote_code} criada com sucesso.", "success")
+                flash(f"Cotação {result.quote_code} criada com sucesso.", "success")
                 return redirect(url_for("quote_detail", quote_code=result.quote_code))
             except (ValueError, InvalidOperation) as exc:
                 flash(str(exc), "error")
@@ -480,7 +525,7 @@ def create_app() -> Flask:
             password = request.form.get("password", "")
             confirm_password = request.form.get("confirm_password", "")
             if password != confirm_password:
-                flash("As senhas nao conferem.", "error")
+                flash("As senhas não conferem.", "error")
             else:
                 ok, msg = _create_user(name, username, password)
                 flash(msg, "success" if ok else "error")
@@ -495,7 +540,7 @@ def create_app() -> Flask:
             render_template(
                 "error.html",
                 title="Acesso negado",
-                message="Voce nao tem permissao para acessar esta pagina.",
+                message="Você não tem permissão para acessar esta página.",
             ),
             403,
         )
@@ -505,8 +550,8 @@ def create_app() -> Flask:
         return (
             render_template(
                 "error.html",
-                title="Pagina nao encontrada",
-                message="O recurso solicitado nao foi encontrado.",
+                title="Página não encontrada",
+                message="O recurso solicitado não foi encontrado.",
             ),
             404,
         )

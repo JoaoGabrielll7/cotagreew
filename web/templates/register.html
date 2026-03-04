@@ -4,24 +4,24 @@
 <section class="auth-layout">
   <div class="auth-panel">
     <p class="kicker">Cadastro</p>
-    <h1>Novo usuario operador</h1>
-    <p class="muted">Usuarios cadastrados ja podem entrar e cotar normalmente.</p>
+    <h1>Novo usuário operador</h1>
+    <p class="muted">Usuários cadastrados já podem entrar e cotar normalmente.</p>
 
     <form method="post" class="card form-grid">
       <label>Nome completo
         <input type="text" name="name" required>
       </label>
-      <label>Usuario
+      <label>Usuário
         <input type="text" name="username" required>
       </label>
-      <label>Senha (minimo 6 caracteres)
+      <label>Senha (mínimo 6 caracteres)
         <input type="password" name="password" minlength="6" required>
       </label>
       <label>Confirmar senha
         <input type="password" name="confirm_password" minlength="6" required>
       </label>
       <div class="actions-row">
-        <button class="btn btn-primary" type="submit">Criar usuario</button>
+        <button class="btn btn-primary" type="submit">Criar usuário</button>
         <a class="btn btn-ghost" href="{{ url_for('login') }}">Voltar ao login</a>
       </div>
     </form>

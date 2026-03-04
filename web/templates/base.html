@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Greew Cotacao{% endblock %}</title>
+    <title>{% block title %}Greew Cotação{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -18,14 +18,14 @@
       <div class="container nav-wrap">
         <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
           <span class="brand-kicker">GREEW</span>
-          <span class="brand-main">Sistema de Cotacao</span>
+          <span class="brand-main">Sistema de Cotação</span>
         </a>
 
         {% if current_user %}
           <nav class="nav-links">
             <a href="{{ url_for('dashboard') }}">Dashboard</a>
             {% if current_user.is_master %}
-              <a href="{{ url_for('admin_users') }}">Usuarios</a>
+              <a href="{{ url_for('admin_users') }}">Usuários</a>
             {% endif %}
           </nav>
           <div class="session-pill">

@@ -6,11 +6,11 @@
     <p class="kicker">Acesso restrito</p>
     <h1>Entrar no sistema</h1>
     <p class="muted">
-      Faca login com conta master ou usuario cadastrado para criar cotacoes.
+      Faça login com conta master ou usuário cadastrado para criar cotações.
     </p>
 
     <form method="post" class="card form-grid">
-      <label>Usuario
+      <label>Usuário
         <input type="text" name="username" required autocomplete="username">
       </label>
       <label>Senha
@@ -21,15 +21,15 @@
 
     {% if master_default_warning %}
       <p class="warning-note">
-        Credenciais master padrao ativas. Ajuste variaveis de ambiente em producao.
+        Credenciais master padrão ativas. Ajuste variáveis de ambiente em produção.
       </p>
     {% endif %}
   </div>
 
   <aside class="auth-aside card">
     <h2>Primeiro acesso?</h2>
-    <p>Cadastre um operador para comecar a gerar cotacoes com historico salvo.</p>
-    <a class="btn btn-ghost" href="{{ url_for('register') }}">Cadastrar usuario</a>
+    <p>Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
+    <a class="btn btn-ghost" href="{{ url_for('register') }}">Cadastrar usuário</a>
     <p class="mono small">Master: {{ master_username }}</p>
   </aside>
 </section>

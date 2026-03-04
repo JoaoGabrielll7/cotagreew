@@ -112,7 +112,7 @@ def resolve_route(origin: str, destination: str) -> tuple[str, RoutePricing]:
     norm_dest = _normalize_text(destination)
 
     if norm_origin == norm_dest:
-        raise ValueError("Origem e destino nao podem ser iguais.")
+        raise ValueError("Origem e destino não podem ser iguais.")
 
     if norm_origin == "sao paulo" and norm_dest in ROUTE_TABLE:
         return f"Sao Paulo <-> {destination.strip()}", ROUTE_TABLE[norm_dest]
@@ -121,21 +121,21 @@ def resolve_route(origin: str, destination: str) -> tuple[str, RoutePricing]:
         return f"Sao Paulo <-> {origin.strip()}", ROUTE_TABLE[norm_origin]
 
     raise ValueError(
-        "Rota nao cadastrada. Use Sao Paulo <-> Belem/Manaus/Macapa/Boa Vista/Fortaleza."
+        "Rota não cadastrada. Use Sao Paulo <-> Belem/Manaus/Macapa/Boa Vista/Fortaleza."
     )
 
 
 def estimate_weight_kg(cargo_type: str | None) -> tuple[Decimal, str]:
     if not cargo_type:
-        return Decimal("100"), "Peso estimado padrao: 100 kg (tipo de carga nao informado)."
+        return Decimal("100"), "Peso estimado padrão: 100 kg (tipo de carga não informado)."
 
     normalized = _normalize_text(cargo_type)
     for key, (min_kg, max_kg) in WEIGHT_ESTIMATES.items():
         if key in normalized:
-            return max_kg, f"Peso estimado com seguranca para '{cargo_type}': {max_kg} kg."
+            return max_kg, f"Peso estimado com segurança para '{cargo_type}': {max_kg} kg."
 
     return Decimal("100"), (
-        f"Tipo de carga '{cargo_type}' fora da tabela. Peso estimado padrao: 100 kg."
+        f"Tipo de carga '{cargo_type}' fora da tabela. Peso estimado padrão: 100 kg."
     )
 
 
@@ -154,19 +154,19 @@ def _strategy_note(base_cubage: Decimal, base_weight: Decimal, base_nf: Decimal)
 
     if dominant_value >= second_value * Decimal("1.80") and base_nf == dominant_value:
         return (
-            "NF domina fortemente as bases. Usar media ponderada como recomendacao para "
+            "NF domina fortemente as bases. Usar média ponderada como recomendação para "
             "evitar frete exagerado sem comprometer margem."
         )
     if dominant_value >= second_value * Decimal("1.40") and base_cubage == dominant_value:
         return (
-            "Cubagem domina o custo. Manter negociacao acima da media simples para "
+            "Cubagem domina o custo. Manter negociação acima da média simples para "
             "proteger margem operacional."
         )
     if dominant_value >= second_value * Decimal("1.40") and base_weight == dominant_value:
         return (
-            "Peso domina o custo. Evitar desconto agressivo abaixo da media ponderada."
+            "Peso domina o custo. Evitar desconto agressivo abaixo da média ponderada."
         )
-    return "Bases equilibradas. Media ponderada segue como melhor referencia comercial."
+    return "Bases equilibradas. Média ponderada segue como melhor referência comercial."
 
 
 def calculate_quote(data: QuoteInput) -> QuoteResult:
@@ -191,7 +191,7 @@ def calculate_quote(data: QuoteInput) -> QuoteResult:
         cubage_total = data.provided_cubage_m3
     else:
         if data.length_m <= 0 or data.width_m <= 0 or data.height_m <= 0:
-            raise ValueError("Dimensoes precisam ser maiores que zero.")
+            raise ValueError("Dimensões precisam ser maiores que zero.")
         cubage_unit = data.length_m * data.width_m * data.height_m
         cubage_total = cubage_unit * Decimal(data.volumes)
 
@@ -236,7 +236,7 @@ def build_client_message(result: QuoteResult, freight_value: Decimal | None = No
     selected = freight_value if freight_value is not None else result.fair_price
 
     return (
-        f"Cotacao #{result.quote_code}\n\n"
+        f"Cotação #{result.quote_code}\n\n"
         f"Origem: {result.input_data.origin}\n"
         f"Destino: {result.input_data.destination}\n\n"
         f"Volumes: {result.input_data.volumes}\n"
@@ -244,7 +244,7 @@ def build_client_message(result: QuoteResult, freight_value: Decimal | None = No
         f"Cubagem: {result.cubage_total_m3} m3\n\n"
         f"Valor da NF: {format_brl(result.input_data.nf_value)}\n\n"
         f"Valor do frete: {format_brl(selected)}\n\n"
-        "Prazo conforme programacao da rota."
+        "Prazo conforme programação da rota."
     )
 
 
@@ -262,19 +262,19 @@ def build_internal_report(result: QuoteResult) -> str:
         f"Cubagem: {result.cubage_total_m3} m3",
         f"Valor da NF: {format_brl(result.input_data.nf_value)}",
         "",
-        "2) CALCULO INTERNO",
+        "2) CÁLCULO INTERNO",
         f"Base cubagem: {format_brl(result.base_cubage)}",
         f"Base peso: {format_brl(result.base_weight)}",
         f"Base NF: {format_brl(result.base_nf)}",
         "",
         "3) MEDIAS",
-        f"Media simples: {format_brl(result.average_simple)}",
-        f"Media ponderada: {format_brl(result.average_weighted)}",
+        f"Média simples: {format_brl(result.average_simple)}",
+        f"Média ponderada: {format_brl(result.average_weighted)}",
         "",
-        "4) SUGESTAO DE PRECO",
+        "4) SUGESTÃO DE PREÇO",
         f"Valor cheio: {format_brl(result.full_price)}",
         f"Valor justo (recomendado): {format_brl(result.fair_price)}",
-        f"Desconto maximo: {format_brl(result.max_discount_price)}",
+        f"Desconto máximo: {format_brl(result.max_discount_price)}",
         "",
         "Analise inteligente:",
         result.strategy_note,

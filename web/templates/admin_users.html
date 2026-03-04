@@ -1,20 +1,20 @@
 ﻿{% extends "base.html" %}
-{% block title %}Usuarios | Greew{% endblock %}
+{% block title %}Usuários | Greew{% endblock %}
 {% block content %}
 <section class="page-head">
   <p class="kicker">Admin</p>
-  <h1>Usuarios cadastrados</h1>
-  <p class="muted">Somente o master pode criar e visualizar toda a base de usuarios.</p>
+  <h1>Usuários cadastrados</h1>
+  <p class="muted">Somente o master pode criar e visualizar toda a base de usuários.</p>
 </section>
 
 <section class="grid-main">
   <article class="card">
-    <h2>Novo usuario</h2>
+    <h2>Novo usuário</h2>
     <form method="post" class="form-grid">
       <label>Nome completo
         <input type="text" name="name" required>
       </label>
-      <label>Usuario
+      <label>Usuário
         <input type="text" name="username" required>
       </label>
       <label>Senha
@@ -23,7 +23,7 @@
       <label>Confirmar senha
         <input type="password" name="confirm_password" minlength="6" required>
       </label>
-      <button class="btn btn-primary" type="submit">Criar usuario</button>
+      <button class="btn btn-primary" type="submit">Criar usuário</button>
     </form>
   </article>
 
@@ -34,7 +34,7 @@
         <table>
           <thead>
             <tr>
-              <th>Usuario</th>
+              <th>Usuário</th>
               <th>Nome</th>
               <th>Perfil</th>
               <th>Criado em</th>
@@ -43,7 +43,7 @@
           <tbody>
             {% for user in users %}
               <tr>
-                <td data-label="Usuario">{{ user.username }}</td>
+                <td data-label="Usuário">{{ user.username }}</td>
                 <td data-label="Nome">{{ user.name }}</td>
                 <td data-label="Perfil">{{ "Master" if user.is_master else "Operador" }}</td>
                 <td data-label="Criado em">{{ user.created_at|display_date }}</td>
@@ -53,7 +53,7 @@
         </table>
       </div>
     {% else %}
-      <p class="muted">Nenhum usuario cadastrado.</p>
+      <p class="muted">Nenhum usuário cadastrado.</p>
     {% endif %}
   </aside>
 </section>

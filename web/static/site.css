@@ -219,6 +219,43 @@ body {
   gap: 0.8rem;
 }
 
+.volume-items-block {
+  display: grid;
+  gap: 0.65rem;
+  border: 1px dashed rgba(16, 35, 63, 0.24);
+  border-radius: 14px;
+  padding: 0.72rem;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.volume-head h3 {
+  margin: 0;
+}
+
+.volume-head p {
+  margin: 0.25rem 0 0;
+}
+
+.volume-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.volume-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 0.7fr) repeat(3, minmax(0, 1fr)) auto;
+  gap: 0.55rem;
+  align-items: end;
+  border: 1px solid rgba(16, 35, 63, 0.16);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 0.55rem;
+}
+
+.btn-remove-volume {
+  white-space: nowrap;
+}
+
 .two-col {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -386,6 +423,14 @@ td a {
   .card {
     padding: 0.9rem;
   }
+
+  .volume-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .btn-remove-volume {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 860px) {
@@ -490,6 +535,10 @@ td a {
 
   .page-content {
     padding-top: 0.95rem;
+  }
+
+  .volume-row {
+    grid-template-columns: 1fr;
   }
 }
 

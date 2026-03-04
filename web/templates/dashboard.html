@@ -1,15 +1,15 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Dashboard | Greew{% endblock %}
 {% block content %}
 <section class="page-head">
-  <p class="kicker">Operacao</p>
-  <h1>Nova cotacao</h1>
-  <p class="muted">Preencha os dados da carga para gerar calculo interno e proposta ao cliente.</p>
+  <p class="kicker">Operação</p>
+  <h1>Nova cotação</h1>
+  <p class="muted">Preencha os dados da carga para gerar cálculo interno e proposta ao cliente.</p>
 </section>
 
 <section class="grid-main {% if not current_user.is_master %}grid-single{% endif %}">
   <article class="card">
-    <h2>Formulario</h2>
+    <h2>Formulário</h2>
     <form method="post" class="form-grid" id="quote-form">
       <div class="two-col">
         <label>Origem
@@ -28,35 +28,50 @@
         </label>
       </div>
 
-      <div class="two-col">
-        <label>Volumes
-          <input type="number" name="volumes" min="1" step="1" value="1" required>
-        </label>
-        <label>Unidade das dimensoes
-          <select name="unit" id="unit_mode">
-            <option value="m">Metros (m)</option>
-            <option value="cm">Centimetros (cm)</option>
-            <option value="m3">Cubagem direta (m3)</option>
-          </select>
-        </label>
-      </div>
+      <label>Unidade das dimensões
+        <select name="unit" id="unit_mode">
+          <option value="m">Metros (m)</option>
+          <option value="cm">Centímetros (cm)</option>
+          <option value="m3">Cubagem direta (m3)</option>
+        </select>
+      </label>
 
-      <div class="three-col" id="dimension_block">
-        <label>Comprimento
-          <input type="number" name="length" min="0.01" step="0.01" value="1.20" required>
-        </label>
-        <label>Largura
-          <input type="number" name="width" min="0.01" step="0.01" value="0.80" required>
-        </label>
-        <label>Altura
-          <input type="number" name="height" min="0.01" step="0.01" value="1.00" required>
-        </label>
+      <div id="volume_items_block" class="volume-items-block">
+        <div class="volume-head">
+          <h3>Volumes da cotação</h3>
+          <p class="muted small">Você pode adicionar volumes diferentes na mesma cotação.</p>
+        </div>
+
+        <div id="volume_list" class="volume-list">
+          <div class="volume-row">
+            <label>Quantidade
+              <input type="number" name="volume_qty[]" min="1" step="1" value="1" required>
+            </label>
+            <label>Comprimento
+              <input type="number" name="volume_length[]" min="0.01" step="0.01" value="1.20" required>
+            </label>
+            <label>Largura
+              <input type="number" name="volume_width[]" min="0.01" step="0.01" value="0.80" required>
+            </label>
+            <label>Altura
+              <input type="number" name="volume_height[]" min="0.01" step="0.01" value="1.00" required>
+            </label>
+            <button type="button" class="btn btn-ghost btn-remove-volume" data-action="remove-volume">Remover</button>
+          </div>
+        </div>
+
+        <button type="button" id="add_volume_btn" class="btn btn-ghost">Adicionar outro volume</button>
       </div>
 
       <div id="cubage_block" class="hidden">
-        <label>Cubagem total (m3)
-          <input type="number" name="cubage_total" min="0.01" step="0.01" value="2.88">
-        </label>
+        <div class="two-col">
+          <label>Cubagem total (m3)
+            <input type="number" name="cubage_total" id="cubage_total" min="0.01" step="0.01" value="2.88">
+          </label>
+          <label>Volumes totais
+            <input type="number" name="volumes_m3" id="volumes_m3" min="1" step="1" value="1">
+          </label>
+        </div>
       </div>
 
       <label class="switch-line">
@@ -73,10 +88,10 @@
       <div id="cargo_block" class="hidden">
         <label>Tipo de carga (estimativa de peso)
           <select name="cargo_type">
-            <option value="Pecas industriais">Pecas industriais</option>
-            <option value="Maquinas">Maquinas</option>
+            <option value="Pecas industriais">Peças industriais</option>
+            <option value="Maquinas">Máquinas</option>
             <option value="Caixas pequenas">Caixas pequenas</option>
-            <option value="Moveis">Moveis</option>
+            <option value="Moveis">Móveis</option>
           </select>
         </label>
       </div>
@@ -86,7 +101,7 @@
           <label>Valor da NF (R$)
             <input type="number" name="nf_value" min="0.01" step="0.01" value="15000.00" required>
           </label>
-          <label>Preco para o cliente
+          <label>Preço para o cliente
             <select name="price_mode">
               {% for mode_key, mode_label in price_modes.items() %}
                 <option value="{{ mode_key }}" {% if mode_key == "justo" %}selected{% endif %}>{{ mode_label }}</option>
@@ -101,34 +116,34 @@
         <input type="hidden" name="price_mode" value="justo">
       {% endif %}
 
-      <button class="btn btn-primary" type="submit">Gerar cotacao</button>
+      <button class="btn btn-primary" type="submit">Gerar cotação</button>
     </form>
   </article>
 
   {% if current_user.is_master %}
     <aside class="card">
-      <h2>Historico recente</h2>
+      <h2>Histórico recente</h2>
       {% if recent_quotes %}
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>Codigo</th>
+                <th>Código</th>
                 <th>Rota</th>
                 <th>Frete</th>
                 <th>Modo</th>
-                <th>Usuario</th>
+                <th>Usuário</th>
                 <th>Data</th>
               </tr>
             </thead>
             <tbody>
               {% for item in recent_quotes %}
                 <tr>
-                  <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                  <td data-label="Código"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
                   <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
                   <td data-label="Frete">{{ item.client_price|brl }}</td>
                   <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
-                  <td data-label="Usuario">{{ item.user_name }} ({{ item.user_username }})</td>
+                  <td data-label="Usuário">{{ item.user_name }} ({{ item.user_username }})</td>
                   <td data-label="Data">{{ item.created_at|display_date }}</td>
                 </tr>
               {% endfor %}
@@ -136,7 +151,7 @@
           </table>
         </div>
       {% else %}
-        <p class="muted">Nenhuma cotacao registrada ainda.</p>
+        <p class="muted">Nenhuma cotação registrada ainda.</p>
       {% endif %}
     </aside>
   {% endif %}
@@ -144,13 +159,13 @@
 
 {% if not current_user.is_master %}
   <section class="card history-below">
-    <h2>Historico recente</h2>
+    <h2>Histórico recente</h2>
     {% if recent_quotes %}
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>Codigo</th>
+              <th>Código</th>
               <th>Rota</th>
               <th>Frete</th>
               <th>Modo</th>
@@ -160,7 +175,7 @@
           <tbody>
             {% for item in recent_quotes %}
               <tr>
-                <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                <td data-label="Código"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
                 <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
                 <td data-label="Frete">{{ item.client_price|brl }}</td>
                 <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
@@ -171,7 +186,7 @@
         </table>
       </div>
     {% else %}
-      <p class="muted">Nenhuma cotacao registrada ainda.</p>
+      <p class="muted">Nenhuma cotação registrada ainda.</p>
     {% endif %}
   </section>
 {% endif %}
@@ -181,8 +196,12 @@
   const weightBlock = document.getElementById("weight_block");
   const cargoBlock = document.getElementById("cargo_block");
   const unitMode = document.getElementById("unit_mode");
-  const dimensionBlock = document.getElementById("dimension_block");
+  const volumeItemsBlock = document.getElementById("volume_items_block");
   const cubageBlock = document.getElementById("cubage_block");
+  const cubageTotalInput = document.getElementById("cubage_total");
+  const volumesM3Input = document.getElementById("volumes_m3");
+  const volumeList = document.getElementById("volume_list");
+  const addVolumeBtn = document.getElementById("add_volume_btn");
 
   function toggleWeightMode() {
     if (informedWeight.checked) {
@@ -194,20 +213,67 @@
     }
   }
 
-  function toggleDimensionMode() {
-    if (unitMode.value === "m3") {
-      dimensionBlock.classList.add("hidden");
-      cubageBlock.classList.remove("hidden");
-    } else {
-      dimensionBlock.classList.remove("hidden");
-      cubageBlock.classList.add("hidden");
+  function updateVolumeInputRequirements(isM3) {
+    const qtyInputs = volumeList.querySelectorAll("input[name='volume_qty[]']");
+    const lengthInputs = volumeList.querySelectorAll("input[name='volume_length[]']");
+    const widthInputs = volumeList.querySelectorAll("input[name='volume_width[]']");
+    const heightInputs = volumeList.querySelectorAll("input[name='volume_height[]']");
+
+    [...qtyInputs, ...lengthInputs, ...widthInputs, ...heightInputs].forEach((input) => {
+      input.required = !isM3;
+    });
+
+    if (cubageTotalInput && volumesM3Input) {
+      cubageTotalInput.required = isM3;
+      volumesM3Input.required = isM3;
     }
   }
 
+  function toggleDimensionMode() {
+    const isM3 = unitMode.value === "m3";
+    if (isM3) {
+      volumeItemsBlock.classList.add("hidden");
+      cubageBlock.classList.remove("hidden");
+    } else {
+      volumeItemsBlock.classList.remove("hidden");
+      cubageBlock.classList.add("hidden");
+    }
+    updateVolumeInputRequirements(isM3);
+  }
+
+  function removeVolumeRow(button) {
+    const rows = volumeList.querySelectorAll(".volume-row");
+    if (rows.length <= 1) {
+      return;
+    }
+    button.closest(".volume-row").remove();
+  }
+
+  function addVolumeRow() {
+    const firstRow = volumeList.querySelector(".volume-row");
+    const cloned = firstRow.cloneNode(true);
+    cloned.querySelectorAll("input").forEach((input) => {
+      if (input.name === "volume_qty[]") {
+        input.value = "1";
+      } else {
+        input.value = "";
+      }
+    });
+    volumeList.appendChild(cloned);
+    toggleDimensionMode();
+  }
+
+  volumeList.addEventListener("click", (event) => {
+    const target = event.target;
+    if (target && target.dataset.action === "remove-volume") {
+      removeVolumeRow(target);
+    }
+  });
+
+  addVolumeBtn.addEventListener("click", addVolumeRow);
   informedWeight.addEventListener("change", toggleWeightMode);
   unitMode.addEventListener("change", toggleDimensionMode);
   toggleWeightMode();
   toggleDimensionMode();
 </script>
 {% endblock %}
-
