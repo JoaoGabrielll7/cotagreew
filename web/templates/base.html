@@ -17,8 +17,11 @@
     <header class="site-header">
       <div class="container nav-wrap">
         <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
-          <span class="brand-kicker">GREEW</span>
-          <span class="brand-main">Sistema de Cotação</span>
+          <img class="brand-logo" src="{{ url_for('static', filename='img/greew-logo.png') }}" alt="Greew Transportadora">
+          <span class="brand-text">
+            <span class="brand-kicker">GREEW</span>
+            <span class="brand-main">Sistema de Cotação</span>
+          </span>
         </a>
 
         {% if current_user %}
