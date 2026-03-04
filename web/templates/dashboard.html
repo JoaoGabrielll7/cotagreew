@@ -74,27 +74,9 @@
         </div>
       </div>
 
-      <label class="switch-line">
-        <input type="checkbox" name="informed_weight" id="informed_weight" checked>
-        <span>Peso total informado</span>
+      <label>Peso total (kg) - opcional
+        <input type="number" name="weight" min="0.01" step="0.01" placeholder="Deixe em branco para estimar automaticamente">
       </label>
-
-      <div id="weight_block">
-        <label>Peso total (kg)
-          <input type="number" name="weight" min="0.01" step="0.01" value="200.00">
-        </label>
-      </div>
-
-      <div id="cargo_block" class="hidden">
-        <label>Tipo de carga (estimativa de peso)
-          <select name="cargo_type">
-            <option value="Pecas industriais">Peças industriais</option>
-            <option value="Maquinas">Máquinas</option>
-            <option value="Caixas pequenas">Caixas pequenas</option>
-            <option value="Moveis">Móveis</option>
-          </select>
-        </label>
-      </div>
 
       {% if current_user.is_master %}
         <div class="two-col">
@@ -192,9 +174,6 @@
 {% endif %}
 
 <script>
-  const informedWeight = document.getElementById("informed_weight");
-  const weightBlock = document.getElementById("weight_block");
-  const cargoBlock = document.getElementById("cargo_block");
   const unitMode = document.getElementById("unit_mode");
   const volumeItemsBlock = document.getElementById("volume_items_block");
   const cubageBlock = document.getElementById("cubage_block");
@@ -202,16 +181,6 @@
   const volumesM3Input = document.getElementById("volumes_m3");
   const volumeList = document.getElementById("volume_list");
   const addVolumeBtn = document.getElementById("add_volume_btn");
-
-  function toggleWeightMode() {
-    if (informedWeight.checked) {
-      weightBlock.classList.remove("hidden");
-      cargoBlock.classList.add("hidden");
-    } else {
-      weightBlock.classList.add("hidden");
-      cargoBlock.classList.remove("hidden");
-    }
-  }
 
   function updateVolumeInputRequirements(isM3) {
     const qtyInputs = volumeList.querySelectorAll("input[name='volume_qty[]']");
@@ -271,9 +240,7 @@
   });
 
   addVolumeBtn.addEventListener("click", addVolumeRow);
-  informedWeight.addEventListener("change", toggleWeightMode);
   unitMode.addEventListener("change", toggleDimensionMode);
-  toggleWeightMode();
   toggleDimensionMode();
 </script>
 {% endblock %}

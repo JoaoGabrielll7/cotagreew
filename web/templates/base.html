@@ -24,6 +24,7 @@
         {% if current_user %}
           <nav class="nav-links">
             <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('profile') }}">Perfil</a>
             {% if current_user.is_master %}
               <a href="{{ url_for('admin_users') }}">Usuários</a>
             {% endif %}

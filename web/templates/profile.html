@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Perfil | Greew{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="kicker">Conta</p>
+  <h1>Perfil do usuário</h1>
+  <p class="muted">Informações da sua conta no sistema de cotação.</p>
+</section>
+
+<section class="quote-grid">
+  <article class="card">
+    <h2>Dados da conta</h2>
+    <p><strong>Nome:</strong> {{ current_user.name }}</p>
+    <p><strong>Usuário:</strong> {{ current_user.username }}</p>
+    <p><strong>Perfil:</strong> {{ "Master" if current_user.is_master else "Operador" }}</p>
+    <p><strong>Criado em:</strong> {{ current_user.created_at|display_date }}</p>
+  </article>
+
+  <article class="card">
+    <h2>Atividade</h2>
+    <p><strong>Cotações criadas:</strong> {{ stats.quotes_count }}</p>
+    <p>
+      <strong>Última cotação:</strong>
+      {% if stats.last_quote_at %}
+        {{ stats.last_quote_at|display_date }}
+      {% else %}
+        Ainda não há cotações.
+      {% endif %}
+    </p>
+    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Voltar ao dashboard</a>
+  </article>
+</section>
+{% endblock %}

@@ -317,6 +317,23 @@ def _list_all_users() -> list[dict[str, Any]]:
         return list(cur.fetchall())
 
 
+def _user_profile_stats(user_id: int) -> dict[str, Any]:
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT COUNT(*) AS quotes_count, MAX(created_at) AS last_quote_at
+            FROM quotes
+            WHERE user_id = %s
+            """,
+            (user_id,),
+        )
+        row = cur.fetchone() or {}
+        return {
+            "quotes_count": int(row.get("quotes_count") or 0),
+            "last_quote_at": row.get("last_quote_at"),
+        }
+
+
 def _format_dt(value: Any) -> str:
     if isinstance(value, datetime):
         return value.strftime("%d/%m/%Y %H:%M")
@@ -428,6 +445,12 @@ def create_app() -> Flask:
         flash("Sessão encerrada.", "info")
         return redirect(url_for("login"))
 
+    @app.get("/profile")
+    @login_required
+    def profile() -> Any:
+        stats = _user_profile_stats(g.current_user["id"])
+        return render_template("profile.html", stats=stats)
+
     @app.route("/dashboard", methods=["GET", "POST"])
     @login_required
     def dashboard() -> Any:
@@ -454,14 +477,8 @@ def create_app() -> Flask:
                 height = Decimal("1")
                 nf_value = _to_decimal(request.form.get("nf_value", "0"))
                 price_mode = request.form.get("price_mode", "justo").strip()
-                informed_weight = request.form.get("informed_weight", "on") == "on"
-
-                total_weight = None
-                cargo_type = None
-                if informed_weight:
-                    total_weight = _to_decimal(request.form.get("weight", "0"))
-                else:
-                    cargo_type = request.form.get("cargo_type", "").strip() or None
+                weight_raw = request.form.get("weight", "").strip()
+                total_weight = _to_decimal(weight_raw) if weight_raw else None
 
                 data = QuoteInput(
                     origin=origin,
@@ -473,7 +490,7 @@ def create_app() -> Flask:
                     nf_value=nf_value,
                     provided_cubage_m3=provided_cubage,
                     total_weight_kg=total_weight,
-                    cargo_type=cargo_type,
+                    cargo_type=None,
                 )
                 result = calculate_quote(data)
                 client_price = _selected_price(result, price_mode)
