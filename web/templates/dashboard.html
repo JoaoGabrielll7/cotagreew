@@ -81,18 +81,25 @@
         </label>
       </div>
 
-      <div class="two-col">
+      {% if current_user.is_master %}
+        <div class="two-col">
+          <label>Valor da NF (R$)
+            <input type="number" name="nf_value" min="0.01" step="0.01" value="15000.00" required>
+          </label>
+          <label>Preco para o cliente
+            <select name="price_mode">
+              {% for mode_key, mode_label in price_modes.items() %}
+                <option value="{{ mode_key }}" {% if mode_key == "justo" %}selected{% endif %}>{{ mode_label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </div>
+      {% else %}
         <label>Valor da NF (R$)
           <input type="number" name="nf_value" min="0.01" step="0.01" value="15000.00" required>
         </label>
-        <label>Preco para o cliente
-          <select name="price_mode">
-            {% for mode_key, mode_label in price_modes.items() %}
-              <option value="{{ mode_key }}" {% if mode_key == "justo" %}selected{% endif %}>{{ mode_label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-      </div>
+        <input type="hidden" name="price_mode" value="justo">
+      {% endif %}
 
       <button class="btn btn-primary" type="submit">Gerar cotacao</button>
     </form>
