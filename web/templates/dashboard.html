@@ -111,14 +111,14 @@
           <tbody>
             {% for item in recent_quotes %}
               <tr>
-                <td><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
-                <td>{{ item.origin }} -> {{ item.destination }}</td>
-                <td>{{ item.client_price|brl }}</td>
-                <td>{{ price_mode_labels[item.client_price_mode] }}</td>
+                <td data-label="Codigo"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
+                <td data-label="Frete">{{ item.client_price|brl }}</td>
+                <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
                 {% if current_user.is_master %}
-                  <td>{{ item.user_name }} ({{ item.user_username }})</td>
+                  <td data-label="Usuario">{{ item.user_name }} ({{ item.user_username }})</td>
                 {% endif %}
-                <td>{{ item.created_at|display_date }}</td>
+                <td data-label="Data">{{ item.created_at|display_date }}</td>
               </tr>
             {% endfor %}
           </tbody>

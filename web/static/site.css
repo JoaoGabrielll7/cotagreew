@@ -24,6 +24,7 @@ body {
   font-family: "Sora", sans-serif;
   background: linear-gradient(180deg, #f3f8ff 0%, #e8edf6 100%);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .bg-orb {
@@ -100,17 +101,21 @@ body {
 .brand-main {
   font-size: 1rem;
   font-weight: 700;
+  line-height: 1.15;
 }
 
 .nav-links {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .nav-links a {
   text-decoration: none;
   color: var(--ink-700);
   font-weight: 600;
+  padding: 0.35rem 0.55rem;
+  border-radius: 10px;
 }
 
 .session-pill {
@@ -120,10 +125,26 @@ body {
   background: rgba(16, 35, 63, 0.07);
   padding: 0.45rem 0.65rem;
   border-radius: 999px;
+  min-width: 0;
+}
+
+.session-pill span {
+  max-width: 290px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .page-content {
   padding: 1.2rem 0 2.2rem;
+}
+
+.page-head {
+  margin-bottom: 0.95rem;
+}
+
+.page-head p {
+  margin-top: 0;
 }
 
 .card {
@@ -138,6 +159,7 @@ body {
 .auth-panel h1 {
   margin: 0 0 0.4rem;
   letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
 .kicker {
@@ -246,6 +268,7 @@ textarea {
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
+  min-height: 44px;
 }
 
 .btn-small {
@@ -272,6 +295,7 @@ textarea {
   display: flex;
   gap: 0.6rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .hidden {
@@ -299,6 +323,7 @@ td {
 td a {
   color: var(--ink-900);
   font-weight: 700;
+  word-break: break-word;
 }
 
 .flash-stack {
@@ -344,6 +369,64 @@ td a {
   .quote-grid {
     grid-template-columns: 1fr;
   }
+
+  .two-col,
+  .three-col {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 0.9rem;
+  }
+}
+
+@media (max-width: 860px) {
+  .table-wrap {
+    overflow-x: visible;
+  }
+
+  table {
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0 0.62rem;
+  }
+
+  thead {
+    display: none;
+  }
+
+  tbody,
+  tr,
+  td {
+    display: block;
+    width: 100%;
+  }
+
+  tr {
+    border: 1px solid rgba(16, 35, 63, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.84);
+    padding: 0.58rem 0.72rem;
+    box-shadow: 0 7px 18px rgba(16, 35, 63, 0.08);
+  }
+
+  td {
+    border: 0;
+    padding: 0.26rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.9rem;
+    font-size: 0.9rem;
+    text-align: right;
+  }
+
+  td::before {
+    content: attr(data-label);
+    color: var(--ink-700);
+    font-weight: 700;
+    text-align: left;
+  }
 }
 
 @media (max-width: 640px) {
@@ -353,15 +436,71 @@ td a {
 
   .nav-wrap {
     flex-wrap: wrap;
+    gap: 0.62rem;
   }
 
-  .two-col,
-  .three-col {
-    grid-template-columns: 1fr;
+  .brand {
+    width: 100%;
   }
 
   .session-pill {
     width: 100%;
     justify-content: space-between;
+    border-radius: 12px;
+    padding: 0.55rem 0.6rem;
+  }
+
+  .session-pill span {
+    max-width: 65vw;
+  }
+
+  .nav-links {
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .nav-links a {
+    flex: 1 1 auto;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.68);
+    border: 1px solid rgba(16, 35, 63, 0.14);
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .actions-row .btn {
+    width: 100%;
+  }
+
+  .page-content {
+    padding-top: 0.95rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .card {
+    border-radius: 14px;
+    padding: 0.78rem;
+  }
+
+  .brand-main {
+    font-size: 0.94rem;
+  }
+
+  .kicker {
+    font-size: 0.66rem;
+  }
+
+  th,
+  td {
+    font-size: 0.84rem;
   }
 }
