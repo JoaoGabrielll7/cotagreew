@@ -9,20 +9,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
   </head>
-  <body class="{% if request.endpoint == 'login' %}page-login{% endif %}">
+  <body class="{% if request.endpoint == 'login' %}page-login{% elif request.endpoint == 'dashboard' %}page-dashboard{% endif %}">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
     <div class="bg-grid"></div>
 
     <header class="site-header">
       <div class="container nav-wrap">
-        <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
-          <img class="brand-logo" src="{{ url_for('static', filename='img/greew-logo.png') }}" alt="Greew Transportadora">
-          <span class="brand-text">
-            <span class="brand-kicker">GREEW</span>
-            <span class="brand-main">Sistema de Cotação</span>
-          </span>
-        </a>
+        <div class="nav-left">
+          {% if current_user %}
+            <button type="button" class="menu-toggle" aria-label="Menu">☰</button>
+          {% endif %}
+          <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
+            <img class="brand-logo" src="{{ url_for('static', filename='img/greew-logo.png') }}" alt="Greew Transportadora">
+            <span class="brand-text">
+              <span class="brand-main">greew</span>
+              <span class="brand-kicker">Sistema de Cotação</span>
+            </span>
+          </a>
+        </div>
 
         {% if current_user %}
           <nav class="nav-links">
@@ -33,7 +38,7 @@
             {% endif %}
           </nav>
           <div class="session-pill">
-            <span class="session-icon">👤</span>
+            <span class="session-icon" aria-hidden="true"></span>
             <span class="session-user">{{ current_user.name }} ({{ 'Master' if current_user.is_master else 'Operador' }})</span>
             <form method="post" action="{{ url_for('logout') }}">
               <button type="submit" class="btn btn-ghost btn-small">Sair</button>
