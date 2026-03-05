@@ -89,18 +89,22 @@ body {
 }
 
 .nav-wrap {
-  min-height: 86px;
+  min-height: 104px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 1rem;
+  padding: 0.52rem 0 0.7rem;
 }
 
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 0.9rem;
+  justify-content: center;
+  gap: 0.7rem;
   min-width: 0;
+  width: 100%;
 }
 
 .menu-toggle {
@@ -194,6 +198,9 @@ body {
 .nav-user-stack {
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
   gap: 0.65rem;
 }
 
@@ -782,8 +789,9 @@ td a {
   .nav-wrap {
     flex-wrap: wrap;
     justify-content: center;
-    padding: 0.6rem 0;
+    padding: 0.55rem 0 0.6rem;
     min-height: auto;
+    gap: 0.72rem;
   }
 
   .nav-left {
