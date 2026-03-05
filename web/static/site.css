@@ -128,51 +128,20 @@ body {
 
 .brand-mark {
   position: relative;
-  width: 62px;
-  height: 62px;
+  width: 76px;
+  height: 76px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .brand-logo {
-  width: 58px;
-  height: 58px;
+  width: 70px;
+  height: 70px;
   border-radius: 999px;
   object-fit: cover;
   border: 1px solid rgba(255, 255, 255, 0.45);
   box-shadow: 0 8px 18px rgba(8, 2, 21, 0.42);
-}
-
-.brand-leaf {
-  position: absolute;
-  right: -2px;
-  top: 4px;
-  width: 20px;
-  height: 15px;
-  border-radius: 16px 16px 16px 0;
-  transform: rotate(-14deg);
-  background: linear-gradient(135deg, #93ff6e 0%, #54ba58 100%);
-  box-shadow: 0 0 0 2px rgba(13, 44, 24, 0.45);
-}
-
-.brand-leaf::before,
-.brand-leaf::after {
-  content: "";
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  height: 2px;
-  border-radius: 10px;
-  background: rgba(22, 64, 30, 0.65);
-}
-
-.brand-leaf::before {
-  top: 5px;
-}
-
-.brand-leaf::after {
-  top: 9px;
 }
 
 .brand-text {
@@ -860,20 +829,13 @@ td a {
   }
 
   .brand-mark {
-    width: 54px;
-    height: 54px;
+    width: 64px;
+    height: 64px;
   }
 
   .brand-logo {
-    width: 50px;
-    height: 50px;
-  }
-
-  .brand-leaf {
-    width: 18px;
-    height: 13px;
-    right: -1px;
-    top: 3px;
+    width: 58px;
+    height: 58px;
   }
 
   .brand-main {
