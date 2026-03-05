@@ -78,6 +78,10 @@ body {
   margin-inline: auto;
 }
 
+.page-dashboard .container {
+  width: min(1120px, calc(100% - 2rem));
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -517,6 +521,16 @@ td a {
   gap: 1rem;
 }
 
+.admin-users-stack {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.backup-form-inline {
+  margin-top: 0.7rem;
+}
+
 .quote-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -666,6 +680,15 @@ td a {
 
 .page-register .register-title {
   font-size: clamp(1.9rem, 3.2vw, 2.6rem);
+}
+
+.users-title {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem) !important;
+}
+
+.profile-stack {
+  grid-template-columns: 1fr;
+  max-width: 860px;
 }
 
 .first-access-card {

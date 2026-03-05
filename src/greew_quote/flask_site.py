@@ -3,11 +3,12 @@
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from functools import wraps
+import json
 import os
 from pathlib import Path
 from typing import Any, Callable
 
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from flask import Flask, Response, abort, flash, g, redirect, render_template, request, session, url_for
 import psycopg
 from psycopg.rows import dict_row
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -141,8 +142,21 @@ def _init_db() -> None:
             )
             """
         )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS activity_logs (
+                id BIGSERIAL PRIMARY KEY,
+                user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+                action TEXT NOT NULL,
+                details TEXT,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
         cur.execute("CREATE INDEX IF NOT EXISTS idx_quotes_user_id ON quotes(user_id)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_quotes_created_at ON quotes(created_at DESC)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON activity_logs(created_at DESC)")
+        cur.execute("CREATE INDEX IF NOT EXISTS idx_logs_user_id ON activity_logs(user_id)")
 
         master_hash = generate_password_hash(MASTER_PASSWORD)
         cur.execute(
@@ -319,6 +333,74 @@ def _list_all_users() -> list[dict[str, Any]]:
         return list(cur.fetchall())
 
 
+def _log_event(action: str, user_id: int | None = None, details: str | None = None) -> None:
+    try:
+        with _connect() as conn, conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO activity_logs (user_id, action, details)
+                VALUES (%s, %s, %s)
+                """,
+                (user_id, action, (details or "").strip() or None),
+            )
+            conn.commit()
+    except Exception:
+        return
+
+
+def _list_activity_logs(limit: int = 200) -> list[dict[str, Any]]:
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT l.id, l.action, l.details, l.created_at,
+                   u.name AS user_name, u.username AS user_username, u.is_master AS user_is_master
+            FROM activity_logs l
+            LEFT JOIN users u ON u.id = l.user_id
+            ORDER BY l.id DESC
+            LIMIT %s
+            """,
+            (limit,),
+        )
+        return list(cur.fetchall())
+
+
+def _build_backup_payload() -> dict[str, Any]:
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT id, username, name, is_master, created_at
+            FROM users
+            ORDER BY id ASC
+            """
+        )
+        users = list(cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT *
+            FROM quotes
+            ORDER BY id ASC
+            """
+        )
+        quotes = list(cur.fetchall())
+
+        cur.execute(
+            """
+            SELECT *
+            FROM activity_logs
+            ORDER BY id ASC
+            """
+        )
+        logs = list(cur.fetchall())
+
+    return {
+        "generated_at": datetime.utcnow().isoformat() + "Z",
+        "users": users,
+        "quotes": quotes,
+        "logs": logs,
+    }
+
+
 def _user_profile_stats(user_id: int) -> dict[str, Any]:
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
@@ -416,9 +498,11 @@ def create_app() -> Flask:
             user = _query_user_by_username(username)
             if user is None or not check_password_hash(str(user["password_hash"]), password):
                 flash("Usuário ou senha inválidos.", "error")
+                _log_event("login_falhou", details=f"Tentativa para {username or 'sem-email'}")
             else:
                 session.clear()
                 session["user_id"] = int(user["id"])
+                _log_event("login_sucesso", user_id=int(user["id"]))
                 flash("Login realizado com sucesso.", "success")
                 return redirect(url_for("dashboard"))
         return render_template(
@@ -438,13 +522,21 @@ def create_app() -> Flask:
             ok, msg = _create_user(email, password)
             flash(msg, "success" if ok else "error")
             if ok:
+                created_user = _query_user_by_username(email)
+                _log_event(
+                    "usuario_cadastrado",
+                    user_id=int(created_user["id"]) if created_user else None,
+                    details=f"Cadastro por e-mail {email.strip().lower()}",
+                )
                 return redirect(url_for("login"))
         return render_template("register.html")
 
     @app.post("/logout")
     @login_required
     def logout() -> Any:
+        current_id = int(g.current_user["id"])
         session.clear()
+        _log_event("logout", user_id=current_id)
         flash("Sessão encerrada.", "info")
         return redirect(url_for("login"))
 
@@ -505,6 +597,11 @@ def create_app() -> Flask:
                     client_price=client_price,
                     client_message=client_message,
                 )
+                _log_event(
+                    "cotacao_criada",
+                    user_id=int(g.current_user["id"]),
+                    details=f"{result.quote_code} | {result.input_data.origin} -> {result.input_data.destination}",
+                )
                 flash(f"Cotação {result.quote_code} criada com sucesso.", "success")
                 return redirect(url_for("quote_detail", quote_code=result.quote_code))
             except (ValueError, InvalidOperation) as exc:
@@ -545,9 +642,33 @@ def create_app() -> Flask:
             ok, msg = _create_user(email, password)
             flash(msg, "success" if ok else "error")
             if ok:
+                _log_event(
+                    "usuario_criado_master",
+                    user_id=int(g.current_user["id"]),
+                    details=f"Cadastro de {email.strip().lower()}",
+                )
                 return redirect(url_for("admin_users"))
         users = _list_all_users()
         return render_template("admin_users.html", users=users)
+
+    @app.get("/admin/logs")
+    @master_required
+    def admin_logs() -> Any:
+        logs = _list_activity_logs(limit=300)
+        return render_template("admin_logs.html", logs=logs)
+
+    @app.post("/admin/backup")
+    @master_required
+    def admin_backup() -> Response:
+        payload = _build_backup_payload()
+        _log_event("backup_gerado", user_id=int(g.current_user["id"]), details="Backup manual completo")
+        timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+        content = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+        return Response(
+            content,
+            mimetype="application/json",
+            headers={"Content-Disposition": f'attachment; filename="backup-cotagreew-{timestamp}.json"'},
+        )
 
     @app.errorhandler(403)
     def forbidden(_: Any) -> Any:

@@ -35,6 +35,7 @@
               <a href="{{ url_for('profile') }}">Perfil</a>
               {% if current_user.is_master %}
                 <a href="{{ url_for('admin_users') }}">Usuários</a>
+                <a href="{{ url_for('admin_logs') }}">Logs</a>
               {% endif %}
             </nav>
             <div class="session-pill">
