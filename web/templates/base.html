@@ -33,7 +33,8 @@
             {% endif %}
           </nav>
           <div class="session-pill">
-            <span>{{ current_user.name }} ({{ 'Master' if current_user.is_master else 'Operador' }})</span>
+            <span class="session-icon">👤</span>
+            <span class="session-user">{{ current_user.name }} ({{ 'Master' if current_user.is_master else 'Operador' }})</span>
             <form method="post" action="{{ url_for('logout') }}">
               <button type="submit" class="btn btn-ghost btn-small">Sair</button>
             </form>
