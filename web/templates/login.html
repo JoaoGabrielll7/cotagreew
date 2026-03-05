@@ -9,6 +9,13 @@
       Faça login com conta master ou usuário cadastrado para criar cotações.
     </p>
 
+    <section class="card first-access-card">
+      <h2>Primeiro acesso?</h2>
+      <p class="muted">Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
+      <a class="btn btn-ghost first-access-btn" href="{{ url_for('register') }}">Cadastrar usuário</a>
+      <p class="mono small first-access-meta">Master: {{ master_username }}</p>
+    </section>
+
     <form method="post" class="card form-grid">
       <label>Usuário
         <input type="text" name="username" required autocomplete="username">
@@ -26,12 +33,6 @@
     {% endif %}
   </div>
 
-  <aside class="auth-aside card first-access-card">
-    <h2>Primeiro acesso?</h2>
-    <p class="muted">Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
-    <a class="btn btn-ghost first-access-btn" href="{{ url_for('register') }}">Cadastrar usuário</a>
-    <p class="mono small first-access-meta">Master: {{ master_username }}</p>
-  </aside>
 </section>
 {% endblock %}
 
