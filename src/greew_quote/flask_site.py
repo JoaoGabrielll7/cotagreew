@@ -22,6 +22,8 @@ MASTER_USERNAME = os.getenv("GREEW_MASTER_USER", "master").strip().lower()
 MASTER_PASSWORD = os.getenv("GREEW_MASTER_PASSWORD", "Master@123")
 MASTER_NAME = os.getenv("GREEW_MASTER_NAME", "Master")
 SECRET_KEY = os.getenv("GREEW_SECRET_KEY", "dev-change-this-key")
+BACKUPS_DIR = PROJECT_ROOT / "data" / "backups"
+BACKUPS_TMP_DIR = Path("/tmp/cotagreew/backups")
 
 CITIES = ["Sao Paulo", "Belem", "Manaus", "Macapa", "Boa Vista", "Fortaleza"]
 PRICE_MODES = {
@@ -368,7 +370,7 @@ def _build_backup_payload() -> dict[str, Any]:
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
             """
-            SELECT id, username, name, is_master, created_at
+            SELECT id, username, name, password_hash, is_master, created_at
             FROM users
             ORDER BY id ASC
             """
@@ -399,6 +401,211 @@ def _build_backup_payload() -> dict[str, Any]:
         "quotes": quotes,
         "logs": logs,
     }
+
+
+def _ensure_backups_dir() -> Path:
+    for candidate in (BACKUPS_DIR, BACKUPS_TMP_DIR):
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            probe = candidate / ".write-test"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return candidate
+        except OSError:
+            continue
+    raise RuntimeError("Não foi possível criar a pasta de backups.")
+
+
+def _json_default(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return str(value)
+    return str(value)
+
+
+def _save_backup_to_file(payload: dict[str, Any]) -> str:
+    directory = _ensure_backups_dir()
+    filename = f"backup-cotagreew-{datetime.utcnow().strftime('%Y%m%d-%H%M%S')}.json"
+    path = directory / filename
+    content = json.dumps(payload, ensure_ascii=False, indent=2, default=_json_default)
+    path.write_text(content, encoding="utf-8")
+    return filename
+
+
+def _safe_backup_path(filename: str) -> Path:
+    safe_name = Path(filename).name
+    if safe_name != filename or not safe_name.endswith(".json"):
+        raise ValueError("Nome de backup inválido.")
+    return _ensure_backups_dir() / safe_name
+
+
+def _list_backup_files() -> list[dict[str, Any]]:
+    directory = _ensure_backups_dir()
+    output: list[dict[str, Any]] = []
+    for path in sorted(directory.glob("backup-cotagreew-*.json"), key=lambda item: item.stat().st_mtime, reverse=True):
+        stat = path.stat()
+        output.append(
+            {
+                "filename": path.name,
+                "size_kb": round(stat.st_size / 1024, 1),
+                "modified_at": datetime.fromtimestamp(stat.st_mtime),
+            }
+        )
+    return output
+
+
+def _load_backup_payload(filename: str) -> dict[str, Any]:
+    path = _safe_backup_path(filename)
+    if not path.exists():
+        raise FileNotFoundError("Backup não encontrado.")
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise ValueError("Arquivo de backup inválido.")
+    return raw
+
+
+def _restore_backup_payload(payload: dict[str, Any]) -> None:
+    users = payload.get("users", [])
+    quotes = payload.get("quotes", [])
+    logs = payload.get("logs", [])
+    if not isinstance(users, list) or not isinstance(quotes, list) or not isinstance(logs, list):
+        raise ValueError("Estrutura de backup inválida.")
+
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("TRUNCATE TABLE activity_logs RESTART IDENTITY CASCADE")
+        cur.execute("TRUNCATE TABLE quotes RESTART IDENTITY CASCADE")
+        cur.execute("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
+
+        for user in users:
+            if not isinstance(user, dict):
+                continue
+            user_id = user.get("id")
+            username = str(user.get("username", "")).strip().lower()
+            if not username:
+                continue
+            name = str(user.get("name") or "Operador")
+            password_hash = str(user.get("password_hash") or "")
+            if not password_hash:
+                password_hash = generate_password_hash("Alterar@123")
+            is_master = bool(user.get("is_master"))
+            created_at = user.get("created_at")
+            cur.execute(
+                """
+                INSERT INTO users (id, username, name, password_hash, is_master, created_at)
+                VALUES (%s, %s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                """,
+                (user_id, username, name, password_hash, is_master, created_at),
+            )
+
+        for quote in quotes:
+            if not isinstance(quote, dict):
+                continue
+            cur.execute(
+                """
+                INSERT INTO quotes (
+                    id, quote_code, user_id, origin, destination, volumes,
+                    weight_total_kg, cubage_total_m3, nf_value,
+                    base_cubage, base_weight, base_nf,
+                    average_simple, average_weighted,
+                    full_price, fair_price, max_discount_price,
+                    strategy_note, client_price_mode, client_price,
+                    client_message, created_at
+                ) VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s,
+                    %s, %s,
+                    %s, %s, %s,
+                    %s, %s, %s,
+                    %s, COALESCE(%s::timestamptz, NOW())
+                )
+                """,
+                (
+                    quote.get("id"),
+                    quote.get("quote_code"),
+                    quote.get("user_id"),
+                    quote.get("origin"),
+                    quote.get("destination"),
+                    quote.get("volumes"),
+                    quote.get("weight_total_kg"),
+                    quote.get("cubage_total_m3"),
+                    quote.get("nf_value"),
+                    quote.get("base_cubage"),
+                    quote.get("base_weight"),
+                    quote.get("base_nf"),
+                    quote.get("average_simple"),
+                    quote.get("average_weighted"),
+                    quote.get("full_price"),
+                    quote.get("fair_price"),
+                    quote.get("max_discount_price"),
+                    quote.get("strategy_note"),
+                    quote.get("client_price_mode"),
+                    quote.get("client_price"),
+                    quote.get("client_message"),
+                    quote.get("created_at"),
+                ),
+            )
+
+        for log in logs:
+            if not isinstance(log, dict):
+                continue
+            cur.execute(
+                """
+                INSERT INTO activity_logs (id, user_id, action, details, created_at)
+                VALUES (%s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                """,
+                (
+                    log.get("id"),
+                    log.get("user_id"),
+                    log.get("action"),
+                    log.get("details"),
+                    log.get("created_at"),
+                ),
+            )
+
+        master_hash = generate_password_hash(MASTER_PASSWORD)
+        cur.execute(
+            """
+            INSERT INTO users (username, name, password_hash, is_master)
+            VALUES (%s, %s, %s, TRUE)
+            ON CONFLICT (username)
+            DO UPDATE SET
+                name = EXCLUDED.name,
+                password_hash = EXCLUDED.password_hash,
+                is_master = TRUE
+            """,
+            (MASTER_USERNAME, MASTER_NAME, master_hash),
+        )
+
+        cur.execute(
+            """
+            SELECT setval(
+                pg_get_serial_sequence('users', 'id'),
+                GREATEST(COALESCE((SELECT MAX(id) FROM users), 1), 1),
+                true
+            )
+            """
+        )
+        cur.execute(
+            """
+            SELECT setval(
+                pg_get_serial_sequence('quotes', 'id'),
+                GREATEST(COALESCE((SELECT MAX(id) FROM quotes), 1), 1),
+                true
+            )
+            """
+        )
+        cur.execute(
+            """
+            SELECT setval(
+                pg_get_serial_sequence('activity_logs', 'id'),
+                GREATEST(COALESCE((SELECT MAX(id) FROM activity_logs), 1), 1),
+                true
+            )
+            """
+        )
+        conn.commit()
 
 
 def _user_profile_stats(user_id: int) -> dict[str, Any]:
@@ -655,20 +862,60 @@ def create_app() -> Flask:
     @master_required
     def admin_logs() -> Any:
         logs = _list_activity_logs(limit=300)
-        return render_template("admin_logs.html", logs=logs)
+        backups = _list_backup_files()
+        return render_template("admin_logs.html", logs=logs, backups=backups)
 
     @app.post("/admin/backup")
     @master_required
-    def admin_backup() -> Response:
+    def admin_backup() -> Any:
         payload = _build_backup_payload()
-        _log_event("backup_gerado", user_id=int(g.current_user["id"]), details="Backup manual completo")
-        timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-        content = json.dumps(payload, ensure_ascii=False, indent=2, default=str)
-        return Response(
-            content,
-            mimetype="application/json",
-            headers={"Content-Disposition": f'attachment; filename="backup-cotagreew-{timestamp}.json"'},
+        filename = _save_backup_to_file(payload)
+        _log_event(
+            "backup_gerado",
+            user_id=int(g.current_user["id"]),
+            details=f"Backup salvo: {filename}",
         )
+        flash(f"Backup salvo: {filename}", "success")
+        return redirect(url_for("admin_logs"))
+
+    @app.get("/admin/backup/download/<filename>")
+    @master_required
+    def admin_backup_download(filename: str) -> Response:
+        try:
+            path = _safe_backup_path(filename)
+        except ValueError:
+            abort(404)
+        if not path.exists():
+            abort(404)
+        return Response(
+            path.read_text(encoding="utf-8"),
+            mimetype="application/json",
+            headers={"Content-Disposition": f'attachment; filename="{path.name}"'},
+        )
+
+    @app.post("/admin/backup/restore")
+    @master_required
+    def admin_backup_restore() -> Any:
+        filename = request.form.get("filename", "").strip()
+        if not filename:
+            flash("Selecione um backup para restaurar.", "error")
+            return redirect(url_for("admin_logs"))
+        try:
+            payload = _load_backup_payload(filename)
+            _restore_backup_payload(payload)
+            _log_event(
+                "backup_restaurado",
+                user_id=int(g.current_user["id"]),
+                details=f"Backup restaurado: {filename}",
+            )
+            flash(f"Backup {filename} restaurado com sucesso.", "success")
+        except FileNotFoundError:
+            flash("Arquivo de backup não encontrado.", "error")
+        except ValueError as exc:
+            flash(str(exc), "error")
+        except Exception:
+            flash("Falha ao restaurar backup.", "error")
+        return redirect(url_for("admin_logs"))
 
     @app.errorhandler(403)
     def forbidden(_: Any) -> Any:

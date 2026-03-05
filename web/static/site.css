@@ -79,7 +79,7 @@ body {
 }
 
 .page-dashboard .container {
-  width: min(1120px, calc(100% - 2rem));
+  width: min(1020px, calc(100% - 2rem));
 }
 
 .site-header {
@@ -529,6 +529,14 @@ td a {
 
 .backup-form-inline {
   margin-top: 0.7rem;
+}
+
+.backup-actions {
+  gap: 0.45rem;
+}
+
+.backup-actions form {
+  margin: 0;
 }
 
 .quote-grid {
