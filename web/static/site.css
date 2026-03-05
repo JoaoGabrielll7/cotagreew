@@ -590,7 +590,7 @@ td a {
 }
 
 .btn-exit {
-  color: #f8fff5;
+  color: #000000;
   background: linear-gradient(180deg, #77dd69 0%, #4db359 100%);
   border-color: rgba(74, 161, 77, 0.52);
   box-shadow: 0 10px 20px rgba(19, 80, 31, 0.35);
@@ -624,6 +624,24 @@ td a {
   gap: 0.6rem;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.quote-message-actions {
+  margin-top: 0.9rem;
+}
+
+.btn-copy-message {
+  color: #fff;
+  background: linear-gradient(180deg, #8c39ea 0%, #7430c8 100%);
+  border-color: rgba(186, 134, 255, 0.6);
+  box-shadow: 0 8px 18px rgba(78, 29, 139, 0.5);
+  min-height: 46px;
+  min-width: 260px;
+  font-size: 1.3rem;
+}
+
+.btn-copy-message:hover {
+  filter: brightness(1.06);
 }
 
 .hidden {
@@ -854,6 +872,12 @@ td a {
   .btn-submit-quote {
     width: 100%;
     font-size: 1.2rem;
+  }
+
+  .btn-copy-message {
+    width: 100%;
+    min-width: 0;
+    font-size: 1.15rem;
   }
 
   table {
