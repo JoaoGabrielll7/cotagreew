@@ -1,0 +1,58 @@
+<svg width="860" height="320" viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Caminhões Greew">
+  <defs>
+    <linearGradient id="smokeA" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8E2CFF" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#89FF63" stop-opacity="0.45" />
+    </linearGradient>
+    <linearGradient id="cabPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A24BFF" />
+      <stop offset="100%" stop-color="#5E149F" />
+    </linearGradient>
+    <linearGradient id="cabGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A2FF73" />
+      <stop offset="100%" stop-color="#2A9948" />
+    </linearGradient>
+    <linearGradient id="trailerWhite" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F8F8FF" />
+      <stop offset="100%" stop-color="#DFE1F0" />
+    </linearGradient>
+    <filter id="blurSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+  </defs>
+
+  <ellipse cx="430" cy="284" rx="360" ry="34" fill="url(#smokeA)" filter="url(#blurSoft)" />
+
+  <g transform="translate(70 116)">
+    <rect x="0" y="34" width="178" height="70" rx="10" fill="url(#cabPurple)" />
+    <rect x="130" y="0" width="75" height="70" rx="10" fill="url(#cabPurple)" />
+    <rect x="138" y="10" width="52" height="30" rx="7" fill="#EDE3FF" />
+    <circle cx="46" cy="110" r="16" fill="#1A1A21" />
+    <circle cx="146" cy="110" r="16" fill="#1A1A21" />
+    <circle cx="46" cy="110" r="7" fill="#8E93B5" />
+    <circle cx="146" cy="110" r="7" fill="#8E93B5" />
+  </g>
+
+  <g transform="translate(256 110)">
+    <rect x="0" y="40" width="198" height="74" rx="11" fill="url(#cabGreen)" />
+    <rect x="148" y="2" width="84" height="76" rx="11" fill="url(#cabGreen)" />
+    <rect x="160" y="14" width="56" height="32" rx="7" fill="#E8FFE8" />
+    <circle cx="54" cy="120" r="17" fill="#171A20" />
+    <circle cx="164" cy="120" r="17" fill="#171A20" />
+    <circle cx="54" cy="120" r="7" fill="#8E93B5" />
+    <circle cx="164" cy="120" r="7" fill="#8E93B5" />
+  </g>
+
+  <g transform="translate(448 92)">
+    <rect x="0" y="56" width="298" height="94" rx="13" fill="url(#trailerWhite)" />
+    <rect x="298" y="52" width="90" height="98" rx="13" fill="url(#trailerWhite)" />
+    <rect x="306" y="68" width="60" height="34" rx="8" fill="#EEF0FF" />
+    <circle cx="72" cy="156" r="18" fill="#141821" />
+    <circle cx="202" cy="156" r="18" fill="#141821" />
+    <circle cx="338" cy="156" r="18" fill="#141821" />
+    <circle cx="72" cy="156" r="8" fill="#8A90AF" />
+    <circle cx="202" cy="156" r="8" fill="#8A90AF" />
+    <circle cx="338" cy="156" r="8" fill="#8A90AF" />
+    <text x="112" y="118" font-size="54" font-family="Sora, Arial, sans-serif" font-weight="700" fill="#2D2550">greew</text>
+  </g>
+</svg>

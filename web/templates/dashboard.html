@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% block title %}Dashboard | Greew{% endblock %}
 {% block content %}
-<section class="page-head">
-  <p class="kicker">Operação</p>
-  <h1>Nova cotação</h1>
-  <p class="muted">Preencha os dados da carga para gerar cálculo interno e proposta ao cliente.</p>
-</section>
+<section class="quote-stage">
+  <section class="page-head">
+    <p class="kicker">OPERAÇÃO</p>
+    <h1>Nova cotação</h1>
+    <p class="muted">Preencha os dados da carga para gerar cálculo interno e proposta ao cliente.</p>
+  </section>
 
-<section class="grid-main {% if not current_user.is_master %}grid-single{% endif %}">
-  <article class="card">
+  <article class="card quote-form-card">
     <h2>Formulário</h2>
     <form method="post" class="form-grid" id="quote-form">
       <div class="two-col">
@@ -32,7 +32,7 @@
         <select name="unit" id="unit_mode">
           <option value="m">Metros (m)</option>
           <option value="cm">Centímetros (cm)</option>
-          <option value="m3">Cubagem direta (m3)</option>
+          <option value="m3">Cubagem direta (m³)</option>
         </select>
       </label>
 
@@ -56,16 +56,16 @@
             <label>Altura
               <input type="number" name="volume_height[]" min="0.01" step="0.01" value="1.00" required>
             </label>
-            <button type="button" class="btn btn-ghost btn-remove-volume" data-action="remove-volume">Remover</button>
+            <button type="button" class="btn btn-remove-volume" data-action="remove-volume">Remover</button>
           </div>
         </div>
 
-        <button type="button" id="add_volume_btn" class="btn btn-ghost">Adicionar outro volume</button>
+        <button type="button" id="add_volume_btn" class="btn btn-ghost btn-add-volume">Adicionar outro volume</button>
       </div>
 
       <div id="cubage_block" class="hidden">
         <div class="two-col">
-          <label>Cubagem total (m3)
+          <label>Cubagem total (m³)
             <input type="number" name="cubage_total" id="cubage_total" min="0.01" step="0.01" value="2.88">
           </label>
           <label>Volumes totais
@@ -98,48 +98,52 @@
         <input type="hidden" name="price_mode" value="justo">
       {% endif %}
 
-      <button class="btn btn-primary" type="submit">Gerar cotação</button>
+      <button class="btn btn-primary btn-submit-quote" type="submit">Gerar cotação</button>
     </form>
   </article>
 
-  {% if current_user.is_master %}
-    <aside class="card">
-      <h2>Histórico recente</h2>
-      {% if recent_quotes %}
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Código</th>
-                <th>Rota</th>
-                <th>Frete</th>
-                <th>Modo</th>
-                <th>Usuário</th>
-                <th>Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in recent_quotes %}
-                <tr>
-                  <td data-label="Código"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
-                  <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
-                  <td data-label="Frete">{{ item.client_price|brl }}</td>
-                  <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
-                  <td data-label="Usuário">{{ item.user_name }} ({{ item.user_username }})</td>
-                  <td data-label="Data">{{ item.created_at|display_date }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% else %}
-        <p class="muted">Nenhuma cotação registrada ainda.</p>
-      {% endif %}
-    </aside>
-  {% endif %}
+  <img
+    class="truck-illustration"
+    src="{{ url_for('static', filename='img/trucks-group.svg') }}"
+    alt="Caminhões Greew"
+  >
 </section>
 
-{% if not current_user.is_master %}
+{% if current_user.is_master %}
+  <section class="card history-below">
+    <h2>Histórico recente</h2>
+    {% if recent_quotes %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Rota</th>
+              <th>Frete</th>
+              <th>Modo</th>
+              <th>Usuário</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in recent_quotes %}
+              <tr>
+                <td data-label="Código"><a href="{{ url_for('quote_detail', quote_code=item.quote_code) }}">{{ item.quote_code }}</a></td>
+                <td data-label="Rota">{{ item.origin }} -> {{ item.destination }}</td>
+                <td data-label="Frete">{{ item.client_price|brl }}</td>
+                <td data-label="Modo">{{ price_mode_labels[item.client_price_mode] }}</td>
+                <td data-label="Usuário">{{ item.user_name }} ({{ item.user_username }})</td>
+                <td data-label="Data">{{ item.created_at|display_date }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhuma cotação registrada ainda.</p>
+    {% endif %}
+  </section>
+{% else %}
   <section class="card history-below">
     <h2>Histórico recente</h2>
     {% if recent_quotes %}
