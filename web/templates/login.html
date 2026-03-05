@@ -9,21 +9,15 @@
       Faça login com conta master ou usuário cadastrado para criar cotações.
     </p>
 
-    <section class="card first-access-card">
-      <h2>Primeiro acesso?</h2>
-      <p class="muted">Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
-      <a class="btn btn-ghost first-access-btn" href="{{ url_for('register') }}">Cadastrar usuário</a>
-      <p class="mono small first-access-meta">Master: {{ master_username }}</p>
-    </section>
-
     <form method="post" class="card form-grid">
-      <label>Usuário
-        <input type="text" name="username" required autocomplete="username">
+      <label>E-mail
+        <input type="text" name="email" required autocomplete="username">
       </label>
       <label>Senha
         <input type="password" name="password" required autocomplete="current-password">
       </label>
       <button class="btn btn-primary" type="submit">Entrar</button>
+      <a class="form-help-link" href="{{ url_for('forgot_password') }}">Esqueceu a senha?</a>
     </form>
 
     {% if master_default_warning %}
@@ -31,6 +25,13 @@
         Credenciais master padrão ativas. Ajuste variáveis de ambiente em produção.
       </p>
     {% endif %}
+
+    <section class="card first-access-card">
+      <h2>Primeiro acesso?</h2>
+      <p class="muted">Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
+      <a class="btn btn-ghost first-access-btn" href="{{ url_for('register') }}">Cadastrar usuário</a>
+      <p class="mono small first-access-meta">Master: {{ master_username }}</p>
+    </section>
   </div>
 
 </section>

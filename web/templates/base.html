@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
   </head>
-  <body class="{% if request.endpoint == 'login' %}page-login{% elif request.endpoint == 'dashboard' %}page-dashboard{% endif %}">
+  <body class="{% if request.endpoint == 'login' %}page-login{% elif request.endpoint == 'dashboard' %}page-dashboard{% elif request.endpoint == 'register' %}page-register{% endif %}">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
     <div class="bg-grid"></div>

@@ -178,20 +178,22 @@ def _query_user_by_id(user_id: int) -> dict[str, Any] | None:
         return cur.fetchone()
 
 
-def _create_user(name: str, username: str, password: str) -> tuple[bool, str]:
-    clean_name = name.strip()
-    clean_user = username.strip().lower()
+def _create_user(email: str, password: str) -> tuple[bool, str]:
+    clean_email = email.strip().lower()
 
-    if not clean_name:
-        return False, "Informe o nome completo."
-    if len(clean_user) < 3:
-        return False, "Usuário precisa ter ao menos 3 caracteres."
-    if clean_user == MASTER_USERNAME:
-        return False, "Este usuário é reservado para o login master."
+    if not clean_email:
+        return False, "Informe o e-mail."
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        return False, "Informe um e-mail válido."
+    if clean_email == MASTER_USERNAME:
+        return False, "Este e-mail é reservado para o login master."
     if len(password) < 6:
         return False, "Senha precisa ter ao menos 6 caracteres."
-    if _query_user_by_username(clean_user):
-        return False, "Usuário já cadastrado."
+    if _query_user_by_username(clean_email):
+        return False, "E-mail já cadastrado."
+
+    local_part = clean_email.split("@", 1)[0].replace(".", " ").replace("_", " ").replace("-", " ")
+    display_name = " ".join(part for part in local_part.split() if part).title() or "Operador"
 
     with _connect() as conn, conn.cursor() as cur:
         cur.execute(
@@ -199,7 +201,7 @@ def _create_user(name: str, username: str, password: str) -> tuple[bool, str]:
             INSERT INTO users (username, name, password_hash, is_master)
             VALUES (%s, %s, %s, FALSE)
             """,
-            (clean_user, clean_name, generate_password_hash(password)),
+            (clean_email, display_name, generate_password_hash(password)),
         )
         conn.commit()
     return True, "Cadastro realizado com sucesso."
@@ -407,7 +409,9 @@ def create_app() -> Flask:
         if g.current_user:
             return redirect(url_for("dashboard"))
         if request.method == "POST":
-            username = request.form.get("username", "").strip().lower()
+            username = request.form.get("email", "").strip().lower()
+            if not username:
+                username = request.form.get("username", "").strip().lower()
             password = request.form.get("password", "")
             user = _query_user_by_username(username)
             if user is None or not check_password_hash(str(user["password_hash"]), password):
@@ -422,20 +426,19 @@ def create_app() -> Flask:
             master_default_warning=(MASTER_USERNAME == "master" and MASTER_PASSWORD == "Master@123"),
         )
 
+    @app.get("/forgot-password")
+    def forgot_password() -> Any:
+        return render_template("forgot_password.html")
+
     @app.route("/register", methods=["GET", "POST"])
     def register() -> Any:
         if request.method == "POST":
-            name = request.form.get("name", "")
-            username = request.form.get("username", "")
+            email = request.form.get("email", "")
             password = request.form.get("password", "")
-            confirm_password = request.form.get("confirm_password", "")
-            if password != confirm_password:
-                flash("As senhas não conferem.", "error")
-            else:
-                ok, msg = _create_user(name, username, password)
-                flash(msg, "success" if ok else "error")
-                if ok:
-                    return redirect(url_for("login"))
+            ok, msg = _create_user(email, password)
+            flash(msg, "success" if ok else "error")
+            if ok:
+                return redirect(url_for("login"))
         return render_template("register.html")
 
     @app.post("/logout")
@@ -537,17 +540,12 @@ def create_app() -> Flask:
     @master_required
     def admin_users() -> Any:
         if request.method == "POST":
-            name = request.form.get("name", "")
-            username = request.form.get("username", "")
+            email = request.form.get("email", "") or request.form.get("username", "")
             password = request.form.get("password", "")
-            confirm_password = request.form.get("confirm_password", "")
-            if password != confirm_password:
-                flash("As senhas não conferem.", "error")
-            else:
-                ok, msg = _create_user(name, username, password)
-                flash(msg, "success" if ok else "error")
-                if ok:
-                    return redirect(url_for("admin_users"))
+            ok, msg = _create_user(email, password)
+            flash(msg, "success" if ok else "error")
+            if ok:
+                return redirect(url_for("admin_users"))
         users = _list_all_users()
         return render_template("admin_users.html", users=users)
 

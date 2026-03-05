@@ -4,21 +4,15 @@
 <section class="auth-layout">
   <div class="auth-panel">
     <p class="kicker">Cadastro</p>
-    <h1>Novo usuário operador</h1>
+    <h1 class="register-title">Novo usuário operador</h1>
     <p class="muted">Usuários cadastrados já podem entrar e cotar normalmente.</p>
 
     <form method="post" class="card form-grid">
-      <label>Nome completo
-        <input type="text" name="name" required>
+      <label>E-mail
+        <input type="email" name="email" required autocomplete="email">
       </label>
-      <label>Usuário
-        <input type="text" name="username" required>
-      </label>
-      <label>Senha (mínimo 6 caracteres)
+      <label>Senha
         <input type="password" name="password" minlength="6" required>
-      </label>
-      <label>Confirmar senha
-        <input type="password" name="confirm_password" minlength="6" required>
       </label>
       <div class="actions-row">
         <button class="btn btn-primary" type="submit">Criar usuário</button>
@@ -28,4 +22,3 @@
   </div>
 </section>
 {% endblock %}
-

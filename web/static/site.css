@@ -576,9 +576,9 @@ td a {
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(90deg, var(--accent-a) 0%, #8a36ea 42%, #91f86a 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 18px rgba(86, 33, 150, 0.45);
+  background: linear-gradient(180deg, #8c39ea 0%, #7430c8 100%);
+  border-color: rgba(186, 134, 255, 0.6);
+  box-shadow: 0 8px 18px rgba(78, 29, 139, 0.5);
 }
 
 .btn-primary:hover {
@@ -626,6 +626,19 @@ td a {
   box-shadow: 0 8px 18px rgba(78, 29, 139, 0.5);
 }
 
+.form-help-link {
+  justify-self: end;
+  margin-top: 0.1rem;
+  color: #d9c4ff;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.form-help-link:hover {
+  color: #f0e6ff;
+  text-decoration: underline;
+}
+
 .actions-row {
   display: flex;
   gap: 0.6rem;
@@ -667,6 +680,12 @@ td a {
   margin-inline: auto;
 }
 
+.page-register .auth-layout {
+  grid-template-columns: 1fr;
+  max-width: 860px;
+  margin-inline: auto;
+}
+
 .page-login .auth-panel {
   display: grid;
   gap: 0.75rem;
@@ -674,6 +693,10 @@ td a {
 
 .page-login .auth-panel > .first-access-card {
   margin-top: 0.15rem;
+}
+
+.page-register .register-title {
+  font-size: clamp(1.9rem, 3.2vw, 2.6rem);
 }
 
 .first-access-card {
