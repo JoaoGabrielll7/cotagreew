@@ -21,14 +21,7 @@
             <button type="button" class="menu-toggle" aria-label="Menu">☰</button>
           {% endif %}
           <a class="brand" href="{{ url_for('dashboard') if current_user else url_for('login') }}">
-            <span class="brand-mark">
-              <img class="brand-logo" src="{{ url_for('static', filename='img/greew-logo.png') }}" alt="Greew Transportadora">
-              <span class="brand-leaf" aria-hidden="true"></span>
-            </span>
-            <span class="brand-text">
-              <span class="brand-main">greew</span>
-              <span class="brand-kicker">Sistema de Cotação</span>
-            </span>
+            <img class="brand-logo brand-logo-full" src="{{ url_for('static', filename='img/greew-brand.png') }}" alt="Greew Transportes">
           </a>
         </div>
 
