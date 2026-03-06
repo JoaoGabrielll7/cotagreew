@@ -1,58 +1,114 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Usuários | Greew{% endblock %}
 {% block content %}
-<section class="page-head">
-  <p class="kicker">Admin</p>
-  <h1 class="users-title">Usuários</h1>
-  <p class="muted">Somente o master pode criar e visualizar toda a base de usuários.</p>
-</section>
+<div class="center-page users-page" style="max-width: 740px; margin: 0 auto; display: grid; gap: 0.85rem;">
+  <section class="page-head center-head" style="text-align: center;">
+    <p class="kicker">Admin</p>
+    <h1 class="users-title">Usuários</h1>
+    <p class="muted">Somente o master pode criar, editar, excluir e visualizar toda a base de usuários.</p>
+  </section>
 
-<section class="admin-users-stack">
-  <article class="card">
-    <h2>Novo usuário</h2>
-    <form method="post" class="form-grid">
-      <label>E-mail
-        <input type="email" name="email" required>
-      </label>
-      <label>Senha
-        <input type="password" name="password" minlength="6" required>
-      </label>
-      <button class="btn btn-primary" type="submit">Criar usuário</button>
-    </form>
-    <form method="post" action="{{ url_for('admin_backup') }}" class="backup-form-inline">
-      <button class="btn btn-ghost" type="submit">Gerar backup</button>
-    </form>
-  </article>
+  <section class="admin-users-stack center-stack" style="max-width: 740px; width: 100%; margin: 0 auto;">
+    <article class="card user-create-card">
+      {% if edit_user %}
+        <h2>Editar usuário</h2>
+        <form method="post" class="form-grid user-create-form">
+          <input type="hidden" name="action" value="update">
+          <input type="hidden" name="target_id" value="{{ edit_user.id }}">
+          <label>E-mail
+            <input type="email" name="email" value="{{ edit_user.username }}" required>
+          </label>
+          <label>Nome
+            <input type="text" name="name" value="{{ edit_user.name }}" required>
+          </label>
+          <label>Cargo
+            <select name="role" required>
+              <option value="operador" {% if not edit_user.is_master %}selected{% endif %}>Operador</option>
+              <option value="master" {% if edit_user.is_master %}selected{% endif %}>Master</option>
+            </select>
+          </label>
+          <label>Nova senha (opcional)
+            <input type="password" name="password" minlength="6" placeholder="Deixe em branco para manter">
+          </label>
+          <div class="user-form-actions">
+            <button class="btn btn-primary" type="submit">Salvar alterações</button>
+            <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Cancelar</a>
+          </div>
+        </form>
+      {% else %}
+        <h2>Novo usuário</h2>
+        <form method="post" class="form-grid user-create-form">
+          <input type="hidden" name="action" value="create">
+          <label>E-mail
+            <input type="email" name="email" required>
+          </label>
+          <label>Senha
+            <input type="password" name="password" minlength="6" required>
+          </label>
+          <label>Cargo
+            <select name="role" required>
+              <option value="operador" selected>Operador</option>
+              <option value="master">Master</option>
+            </select>
+          </label>
+          <button class="btn btn-primary" type="submit">Criar usuário</button>
+        </form>
+      {% endif %}
+      <form method="post" action="{{ url_for('admin_backup') }}" class="backup-form-inline">
+        <button class="btn btn-ghost" type="submit">Gerar backup</button>
+      </form>
+    </article>
 
-  <article class="card">
-    <h2>Lista</h2>
-    {% if users %}
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Usuário</th>
-              <th>Nome</th>
-              <th>Perfil</th>
-              <th>Criado em</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in users %}
+    <article class="card">
+      <h2>Lista</h2>
+      {% if users %}
+        <div class="table-wrap users-list-wrap">
+          <table class="users-list-table">
+            <thead>
               <tr>
-                <td data-label="Usuário">{{ user.username }}</td>
-                <td data-label="Nome">{{ user.name }}</td>
-                <td data-label="Perfil">{{ "Master" if user.is_master else "Operador" }}</td>
-                <td data-label="Criado em">{{ user.created_at|display_date }}</td>
+                <th>Usuário</th>
+                <th>Nome</th>
+                <th>Perfil</th>
+                <th>Criado em</th>
+                <th>Ações</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="muted">Nenhum usuário cadastrado.</p>
-    {% endif %}
-  </article>
-</section>
+            </thead>
+            <tbody>
+              {% for user in users %}
+                {% set is_main_master = (user.username == master_username) %}
+                {% set is_self = (current_user and user.id == current_user.id) %}
+                <tr>
+                  <td data-label="Usuário">{{ user.username }}</td>
+                  <td data-label="Nome">{{ user.name }}</td>
+                  <td data-label="Perfil">{{ "Master" if user.is_master else "Operador" }}</td>
+                  <td data-label="Criado em">{{ user.created_at|display_date }}</td>
+                  <td data-label="Ações">
+                    {% if is_main_master %}
+                      <span class="muted small">Master principal</span>
+                    {% else %}
+                      <div class="user-row-actions">
+                        <a class="btn btn-primary btn-compact" href="{{ url_for('admin_users', edit=user.id) }}">Editar</a>
+                        {% if not is_self %}
+                          <form method="post" class="inline-form" onsubmit="return confirm('Excluir este usuário? Esta ação remove também as cotações dele.');">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="target_id" value="{{ user.id }}">
+                            <button class="btn btn-ghost btn-compact" type="submit">Excluir</button>
+                          </form>
+                        {% else %}
+                          <span class="muted small">Sessão atual</span>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted">Nenhum usuário cadastrado.</p>
+      {% endif %}
+    </article>
+  </section>
+</div>
 {% endblock %}
-

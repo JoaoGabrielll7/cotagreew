@@ -9,7 +9,7 @@
       Faça login com conta master ou usuário cadastrado para criar cotações.
     </p>
 
-    <form method="post" class="card form-grid">
+    <form method="post" class="card form-grid login-access-form">
       <label>E-mail
         <input type="text" name="email" required autocomplete="username">
       </label>
@@ -30,7 +30,6 @@
       <h2>Primeiro acesso?</h2>
       <p class="muted">Cadastre um operador para começar a gerar cotações com histórico salvo.</p>
       <a class="btn btn-ghost first-access-btn" href="{{ url_for('register') }}">Cadastrar usuário</a>
-      <p class="mono small first-access-meta">Master: {{ master_username }}</p>
     </section>
   </div>
 

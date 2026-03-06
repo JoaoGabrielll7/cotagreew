@@ -1,92 +1,94 @@
 {% extends "base.html" %}
 {% block title %}Logs | Greew{% endblock %}
 {% block content %}
-<section class="page-head">
-  <p class="kicker">Admin</p>
-  <h1>Logs do sistema</h1>
-  <p class="muted">Somente o master visualiza o histórico de ações e gerencia backups.</p>
-</section>
+<div class="center-page" style="max-width: 760px; margin: 0 auto; display: grid; gap: 0.85rem;">
+  <section class="page-head center-head" style="text-align: center;">
+    <p class="kicker">Admin</p>
+    <h1>Logs</h1>
+    <p class="muted">Somente o master visualiza o histórico de ações e gerencia backups.</p>
+  </section>
 
-<section class="card">
-  <div class="actions-row">
-    <form method="post" action="{{ url_for('admin_backup') }}">
-      <button type="submit" class="btn btn-primary">Criar backup</button>
-    </form>
-    <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Voltar para usuários</a>
-  </div>
-</section>
-
-<section class="card history-below">
-  <h2>Backups salvos</h2>
-  {% if backups %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Arquivo</th>
-            <th>Tamanho</th>
-            <th>Data</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in backups %}
-            <tr>
-              <td data-label="Arquivo">{{ item.filename }}</td>
-              <td data-label="Tamanho">{{ item.size_kb }} KB</td>
-              <td data-label="Data">{{ item.modified_at|display_date }}</td>
-              <td data-label="Ações">
-                <div class="actions-row backup-actions">
-                  <a class="btn btn-ghost btn-small" href="{{ url_for('admin_backup_download', filename=item.filename) }}">Baixar</a>
-                  <form method="post" action="{{ url_for('admin_backup_restore') }}">
-                    <input type="hidden" name="filename" value="{{ item.filename }}">
-                    <button type="submit" class="btn btn-primary btn-small">Restaurar</button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <section class="card">
+    <div class="actions-row">
+      <form method="post" action="{{ url_for('admin_backup') }}">
+        <button type="submit" class="btn btn-primary">Criar backup</button>
+      </form>
+      <a class="btn btn-ghost" href="{{ url_for('admin_users') }}">Voltar para usuários</a>
     </div>
-  {% else %}
-    <p class="muted">Nenhum backup salvo ainda.</p>
-  {% endif %}
-</section>
+  </section>
 
-<section class="card history-below">
-  <h2>Histórico de ações</h2>
-  {% if logs %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Ação</th>
-            <th>Usuário</th>
-            <th>Detalhes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in logs %}
+  <section class="card history-below center-stack">
+    <h2>Backups salvos</h2>
+    {% if backups %}
+      <div class="table-wrap">
+        <table>
+          <thead>
             <tr>
-              <td data-label="Data">{{ item.created_at|display_date }}</td>
-              <td data-label="Ação">{{ item.action }}</td>
-              <td data-label="Usuário">
-                {% if item.user_username %}
-                  {{ item.user_name }} ({{ item.user_username }})
-                {% else %}
-                  Sistema
-                {% endif %}
-              </td>
-              <td data-label="Detalhes">{{ item.details or "-" }}</td>
+              <th>Arquivo</th>
+              <th>Tamanho</th>
+              <th>Data</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <p class="muted">Nenhum log registrado ainda.</p>
-  {% endif %}
-</section>
+          </thead>
+          <tbody>
+            {% for item in backups %}
+              <tr>
+                <td data-label="Arquivo">{{ item.filename }}</td>
+                <td data-label="Tamanho">{{ item.size_kb }} KB</td>
+                <td data-label="Data">{{ item.modified_at|display_date }}</td>
+                <td data-label="Ações">
+                  <div class="actions-row backup-actions">
+                    <a class="btn btn-ghost btn-small" href="{{ url_for('admin_backup_download', filename=item.filename) }}">Baixar</a>
+                    <form method="post" action="{{ url_for('admin_backup_restore') }}">
+                      <input type="hidden" name="filename" value="{{ item.filename }}">
+                      <button type="submit" class="btn btn-primary btn-small">Restaurar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhum backup salvo ainda.</p>
+    {% endif %}
+  </section>
+
+  <section class="card history-below center-stack">
+    <h2>Histórico de ações</h2>
+    {% if logs %}
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Ação</th>
+              <th>Usuário</th>
+              <th>Detalhes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in logs %}
+              <tr>
+                <td data-label="Data">{{ item.created_at|display_date }}</td>
+                <td data-label="Ação">{{ item.action }}</td>
+                <td data-label="Usuário">
+                  {% if item.user_username %}
+                    {{ item.user_name }} ({{ item.user_username }})
+                  {% else %}
+                    Sistema
+                  {% endif %}
+                </td>
+                <td data-label="Detalhes">{{ item.details or "-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Nenhum log registrado ainda.</p>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

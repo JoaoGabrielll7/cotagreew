@@ -7,9 +7,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/greew-logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/greew-logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='site.css') }}">
   </head>
-  <body class="{% if request.endpoint == 'login' %}page-login{% elif request.endpoint == 'dashboard' %}page-dashboard{% elif request.endpoint == 'register' %}page-register{% endif %}">
+  <body class="{% if request.endpoint == 'login' %}page-login{% elif request.endpoint == 'dashboard' %}page-dashboard{% elif request.endpoint == 'register' %}page-register{% elif request.endpoint == 'admin_logs' %}page-admin-logs{% elif request.endpoint == 'admin_users' %}page-admin-users{% elif request.endpoint == 'profile' %}page-profile{% elif request.endpoint == 'forgot_password' %}page-forgot-password{% endif %}">
     <div class="bg-orb orb-a"></div>
     <div class="bg-orb orb-b"></div>
     <div class="bg-grid"></div>

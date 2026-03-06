@@ -26,8 +26,6 @@ Site completo de cotacao de frete com:
 - `web/static/site.css`: estilo do site
 - `src/greew_quote/flask_site.py`: backend web (auth, rotas, persistencia)
 - `src/greew_quote/engine.py`: regras de cotacao
-- `streamlit_app.py`: interface Streamlit (opcional)
-- `main.py`: CLI (opcional)
 
 ## Requisitos
 
@@ -110,14 +108,4 @@ Acesse `http://localhost:5000`.
 - Valor justo: media ponderada
 - Desconto maximo: media simples
 
-## Extras opcionais
-
-- Streamlit:
-  ```bash
-  streamlit run streamlit_app.py
-  ```
-- CLI:
-  ```bash
-  python main.py
-  ```
 

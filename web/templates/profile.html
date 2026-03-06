@@ -1,33 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Perfil | Greew{% endblock %}
 {% block content %}
-<section class="page-head">
-  <p class="kicker">Conta</p>
-  <h1>Perfil do usuário</h1>
-  <p class="muted">Informações da sua conta no sistema de cotação.</p>
-</section>
+<div class="center-page" style="max-width: 520px; margin: 0 auto; display: grid; gap: 0.75rem;">
+  <section class="page-head" style="text-align: left; padding: 0.4rem 0.15rem 0.2rem;">
+    <p class="kicker">Conta</p>
+    <h1 style="font-size: clamp(1.9rem, 4.6vw, 2.6rem); margin: 0.15rem 0 0.3rem;">Perfil do usuário</h1>
+    <p class="muted">Informações da sua conta no sistema de cotação.</p>
+  </section>
 
-<section class="quote-grid profile-stack">
-  <article class="card">
-    <h2>Dados da conta</h2>
-    <p><strong>Nome:</strong> {{ current_user.name }}</p>
-    <p><strong>Usuário:</strong> {{ current_user.username }}</p>
-    <p><strong>Perfil:</strong> {{ "Master" if current_user.is_master else "Operador" }}</p>
-    <p><strong>Criado em:</strong> {{ current_user.created_at|display_date }}</p>
-  </article>
+  <section class="quote-grid profile-stack" style="max-width: 520px; width: 100%; margin: 0 auto; gap: 0.7rem;">
+    <article class="card" style="text-align: left;">
+      <h2 style="text-align: center;">Dados da conta</h2>
+      <div style="margin-left: 0.2rem;">
+        <p><strong>Nome:</strong> {{ current_user.name }}</p>
+        <p><strong>Usuário:</strong> {{ current_user.username }}</p>
+        <p><strong>Perfil:</strong> {{ "Master" if current_user.is_master else "Operador" }}</p>
+        <p><strong>Criado em:</strong> {{ current_user.created_at|display_date }}</p>
+      </div>
+    </article>
 
-  <article class="card">
-    <h2>Atividade</h2>
-    <p><strong>Cotações criadas:</strong> {{ stats.quotes_count }}</p>
-    <p>
-      <strong>Última cotação:</strong>
-      {% if stats.last_quote_at %}
-        {{ stats.last_quote_at|display_date }}
-      {% else %}
-        Ainda não há cotações.
-      {% endif %}
-    </p>
-    <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Voltar ao dashboard</a>
-  </article>
-</section>
+    <article class="card" style="text-align: left;">
+      <h2 style="text-align: center;">Atividade</h2>
+      <div style="margin-left: 0.2rem;">
+        <p><strong>Cotações criadas:</strong> {{ stats.quotes_count }}</p>
+        <p>
+          <strong>Última cotação:</strong>
+          {% if stats.last_quote_at %}
+            {{ stats.last_quote_at|display_date }}
+          {% else %}
+            Ainda não há cotações.
+          {% endif %}
+        </p>
+      </div>
+      <div style="display: flex; justify-content: center;">
+        <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Voltar ao dashboard</a>
+      </div>
+    </article>
+  </section>
+</div>
 {% endblock %}

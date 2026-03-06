@@ -18,8 +18,8 @@ from .engine import QuoteInput, build_client_message, calculate_quote, format_br
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
-MASTER_USERNAME = os.getenv("GREEW_MASTER_USER", "master").strip().lower()
-MASTER_PASSWORD = os.getenv("GREEW_MASTER_PASSWORD", "Master@123")
+MASTER_USERNAME = "master@gmail.com"
+MASTER_PASSWORD = "@Master2026"
 MASTER_NAME = os.getenv("GREEW_MASTER_NAME", "Master")
 SECRET_KEY = os.getenv("GREEW_SECRET_KEY", "dev-change-this-key")
 BACKUPS_DIR = PROJECT_ROOT / "data" / "backups"
@@ -160,6 +160,16 @@ def _init_db() -> None:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON activity_logs(created_at DESC)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_logs_user_id ON activity_logs(user_id)")
 
+        # Mantem apenas a conta configurada como master.
+        cur.execute(
+            """
+            UPDATE users
+            SET is_master = FALSE
+            WHERE is_master = TRUE AND username <> %s
+            """,
+            (MASTER_USERNAME,),
+        )
+
         master_hash = generate_password_hash(MASTER_PASSWORD)
         cur.execute(
             """
@@ -194,7 +204,42 @@ def _query_user_by_id(user_id: int) -> dict[str, Any] | None:
         return cur.fetchone()
 
 
-def _create_user(email: str, password: str) -> tuple[bool, str]:
+def _upsert_master_user() -> dict[str, Any] | None:
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE users
+            SET is_master = FALSE
+            WHERE is_master = TRUE AND username <> %s
+            """,
+            (MASTER_USERNAME,),
+        )
+        cur.execute(
+            """
+            INSERT INTO users (username, name, password_hash, is_master)
+            VALUES (%s, %s, %s, TRUE)
+            ON CONFLICT (username)
+            DO UPDATE SET
+                name = EXCLUDED.name,
+                password_hash = EXCLUDED.password_hash,
+                is_master = TRUE
+            RETURNING id, username, name, password_hash, is_master, created_at
+            """,
+            (MASTER_USERNAME, MASTER_NAME, generate_password_hash(MASTER_PASSWORD)),
+        )
+        row = cur.fetchone()
+        conn.commit()
+        return row
+
+
+def _count_master_users() -> int:
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS total FROM users WHERE is_master = TRUE")
+        row = cur.fetchone() or {}
+        return int(row.get("total") or 0)
+
+
+def _create_user(email: str, password: str, is_master: bool = False) -> tuple[bool, str]:
     clean_email = email.strip().lower()
 
     if not clean_email:
@@ -215,12 +260,128 @@ def _create_user(email: str, password: str) -> tuple[bool, str]:
         cur.execute(
             """
             INSERT INTO users (username, name, password_hash, is_master)
-            VALUES (%s, %s, %s, FALSE)
+            VALUES (%s, %s, %s, %s)
             """,
-            (clean_email, display_name, generate_password_hash(password)),
+            (clean_email, display_name, generate_password_hash(password), bool(is_master)),
         )
         conn.commit()
     return True, "Cadastro realizado com sucesso."
+
+
+def _update_user_by_master(
+    user_id: int,
+    email: str,
+    name: str,
+    password: str,
+    is_master: bool,
+    acting_user_id: int,
+) -> tuple[bool, str]:
+    target = _query_user_by_id(user_id)
+    if not target:
+        return False, "Usuário não encontrado."
+    target_username = str(target["username"]).strip().lower()
+
+    if target_username == MASTER_USERNAME:
+        return False, "A conta master principal não pode ser editada por este fluxo."
+
+    clean_email = email.strip().lower()
+    if not clean_email:
+        return False, "Informe o e-mail."
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        return False, "Informe um e-mail válido."
+    if clean_email == MASTER_USERNAME and target_username != MASTER_USERNAME:
+        return False, "Este e-mail é reservado para o login master."
+
+    existing = _query_user_by_username(clean_email)
+    if existing and int(existing["id"]) != int(user_id):
+        return False, "E-mail já cadastrado."
+
+    clean_name = name.strip()
+    if not clean_name:
+        local_part = clean_email.split("@", 1)[0].replace(".", " ").replace("_", " ").replace("-", " ")
+        clean_name = " ".join(part for part in local_part.split() if part).title() or "Operador"
+
+    next_is_master = bool(is_master)
+    if int(user_id) == int(acting_user_id) and not next_is_master:
+        return False, "Você não pode remover seu próprio acesso master."
+
+    if bool(target["is_master"]) and not next_is_master and _count_master_users() <= 1:
+        return False, "Deve existir ao menos um usuário master."
+
+    clean_password = password.strip()
+    with _connect() as conn, conn.cursor() as cur:
+        if clean_password:
+            if len(clean_password) < 6:
+                return False, "Senha precisa ter ao menos 6 caracteres."
+            cur.execute(
+                """
+                UPDATE users
+                SET username = %s, name = %s, password_hash = %s, is_master = %s
+                WHERE id = %s
+                """,
+                (clean_email, clean_name, generate_password_hash(clean_password), next_is_master, user_id),
+            )
+        else:
+            cur.execute(
+                """
+                UPDATE users
+                SET username = %s, name = %s, is_master = %s
+                WHERE id = %s
+                """,
+                (clean_email, clean_name, next_is_master, user_id),
+            )
+        conn.commit()
+    return True, "Usuário atualizado com sucesso."
+
+
+def _delete_user_by_master(user_id: int, acting_user_id: int) -> tuple[bool, str, dict[str, Any] | None]:
+    target = _query_user_by_id(user_id)
+    if not target:
+        return False, "Usuário não encontrado.", None
+    target_username = str(target["username"]).strip().lower()
+    if int(user_id) == int(acting_user_id):
+        return False, "Você não pode excluir seu próprio usuário.", None
+    if target_username == MASTER_USERNAME:
+        return False, "A conta master principal não pode ser excluída.", None
+    if bool(target["is_master"]) and _count_master_users() <= 1:
+        return False, "Não é possível excluir o único usuário master.", None
+
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+    return True, "Usuário excluído com sucesso.", target
+
+
+def _reset_user_password(email: str, password: str, confirm_password: str) -> tuple[bool, str, int | None]:
+    clean_email = email.strip().lower()
+
+    if not clean_email:
+        return False, "Informe o e-mail.", None
+    if "@" not in clean_email or "." not in clean_email.split("@")[-1]:
+        return False, "Informe um e-mail valido.", None
+    if len(password) < 6:
+        return False, "Senha precisa ter ao menos 6 caracteres.", None
+    if password != confirm_password:
+        return False, "As senhas nao conferem.", None
+
+    user = _query_user_by_username(clean_email)
+    if not user:
+        return False, "E-mail nao encontrado.", None
+    if bool(user["is_master"]):
+        return False, "A conta master nao pode ser alterada por este fluxo.", None
+
+    with _connect() as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            UPDATE users
+            SET password_hash = %s
+            WHERE id = %s
+            """,
+            (generate_password_hash(password), int(user["id"])),
+        )
+        conn.commit()
+
+    return True, "Senha redefinida com sucesso.", int(user["id"])
 
 
 def _insert_quote(
@@ -466,11 +627,18 @@ def _load_backup_payload(filename: str) -> dict[str, Any]:
 
 
 def _restore_backup_payload(payload: dict[str, Any]) -> None:
-    users = payload.get("users", [])
-    quotes = payload.get("quotes", [])
-    logs = payload.get("logs", [])
-    if not isinstance(users, list) or not isinstance(quotes, list) or not isinstance(logs, list):
-        raise ValueError("Estrutura de backup inválida.")
+    raw_users = payload.get("users", [])
+    raw_quotes = payload.get("quotes", [])
+    raw_logs = payload.get("logs", [])
+    users = raw_users if isinstance(raw_users, list) else []
+    quotes = raw_quotes if isinstance(raw_quotes, list) else []
+    logs = raw_logs if isinstance(raw_logs, list) else []
+    if not users and not quotes and not logs:
+        raise ValueError("Backup vazio ou inválido.")
+
+    def _num(record: dict[str, Any], key: str, default: str = "0") -> Any:
+        value = record.get(key)
+        return default if value in (None, "") else value
 
     with _connect() as conn, conn.cursor() as cur:
         cur.execute("TRUNCATE TABLE activity_logs RESTART IDENTITY CASCADE")
@@ -480,7 +648,7 @@ def _restore_backup_payload(payload: dict[str, Any]) -> None:
         for user in users:
             if not isinstance(user, dict):
                 continue
-            user_id = user.get("id")
+
             username = str(user.get("username", "")).strip().lower()
             if not username:
                 continue
@@ -490,79 +658,184 @@ def _restore_backup_payload(payload: dict[str, Any]) -> None:
                 password_hash = generate_password_hash("Alterar@123")
             is_master = bool(user.get("is_master"))
             created_at = user.get("created_at")
-            cur.execute(
-                """
-                INSERT INTO users (id, username, name, password_hash, is_master, created_at)
-                VALUES (%s, %s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
-                """,
-                (user_id, username, name, password_hash, is_master, created_at),
-            )
+
+            user_id_raw = user.get("id")
+            user_id: int | None = None
+            if user_id_raw not in (None, ""):
+                try:
+                    user_id = int(user_id_raw)
+                except (TypeError, ValueError):
+                    user_id = None
+
+            if user_id is None:
+                cur.execute(
+                    """
+                    INSERT INTO users (username, name, password_hash, is_master, created_at)
+                    VALUES (%s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                    """,
+                    (username, name, password_hash, is_master, created_at),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO users (id, username, name, password_hash, is_master, created_at)
+                    VALUES (%s, %s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                    """,
+                    (user_id, username, name, password_hash, is_master, created_at),
+                )
 
         for quote in quotes:
             if not isinstance(quote, dict):
                 continue
-            cur.execute(
-                """
-                INSERT INTO quotes (
-                    id, quote_code, user_id, origin, destination, volumes,
-                    weight_total_kg, cubage_total_m3, nf_value,
-                    base_cubage, base_weight, base_nf,
-                    average_simple, average_weighted,
-                    full_price, fair_price, max_discount_price,
-                    strategy_note, client_price_mode, client_price,
-                    client_message, created_at
-                ) VALUES (
-                    %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s,
-                    %s, %s, %s,
-                    %s, %s,
-                    %s, %s, %s,
-                    %s, %s, %s,
-                    %s, COALESCE(%s::timestamptz, NOW())
-                )
-                """,
-                (
-                    quote.get("id"),
-                    quote.get("quote_code"),
-                    quote.get("user_id"),
-                    quote.get("origin"),
-                    quote.get("destination"),
-                    quote.get("volumes"),
-                    quote.get("weight_total_kg"),
-                    quote.get("cubage_total_m3"),
-                    quote.get("nf_value"),
-                    quote.get("base_cubage"),
-                    quote.get("base_weight"),
-                    quote.get("base_nf"),
-                    quote.get("average_simple"),
-                    quote.get("average_weighted"),
-                    quote.get("full_price"),
-                    quote.get("fair_price"),
-                    quote.get("max_discount_price"),
-                    quote.get("strategy_note"),
-                    quote.get("client_price_mode"),
-                    quote.get("client_price"),
-                    quote.get("client_message"),
-                    quote.get("created_at"),
-                ),
+
+            quote_code = str(quote.get("quote_code") or "").strip()
+            if not quote_code:
+                continue
+
+            user_id_raw = quote.get("user_id")
+            try:
+                user_id = int(user_id_raw)
+            except (TypeError, ValueError):
+                # Cotacao sem usuario valido nao pode ser restaurada (FK obrigatoria).
+                continue
+
+            volumes_raw = quote.get("volumes")
+            try:
+                volumes = int(volumes_raw)
+            except (TypeError, ValueError):
+                volumes = 1
+
+            client_price_mode = str(quote.get("client_price_mode") or "justo").strip().lower()
+            if client_price_mode not in PRICE_MODES:
+                client_price_mode = "justo"
+
+            quote_id_raw = quote.get("id")
+            quote_id: int | None = None
+            if quote_id_raw not in (None, ""):
+                try:
+                    quote_id = int(quote_id_raw)
+                except (TypeError, ValueError):
+                    quote_id = None
+
+            params_common = (
+                quote_code,
+                user_id,
+                str(quote.get("origin") or ""),
+                str(quote.get("destination") or ""),
+                volumes,
+                _num(quote, "weight_total_kg"),
+                _num(quote, "cubage_total_m3"),
+                _num(quote, "nf_value"),
+                _num(quote, "base_cubage"),
+                _num(quote, "base_weight"),
+                _num(quote, "base_nf"),
+                _num(quote, "average_simple"),
+                _num(quote, "average_weighted"),
+                _num(quote, "full_price"),
+                _num(quote, "fair_price"),
+                _num(quote, "max_discount_price"),
+                str(quote.get("strategy_note") or ""),
+                client_price_mode,
+                _num(quote, "client_price"),
+                str(quote.get("client_message") or ""),
+                quote.get("created_at"),
             )
+
+            if quote_id is None:
+                cur.execute(
+                    """
+                    INSERT INTO quotes (
+                        quote_code, user_id, origin, destination, volumes,
+                        weight_total_kg, cubage_total_m3, nf_value,
+                        base_cubage, base_weight, base_nf,
+                        average_simple, average_weighted,
+                        full_price, fair_price, max_discount_price,
+                        strategy_note, client_price_mode, client_price,
+                        client_message, created_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
+                        %s, COALESCE(%s::timestamptz, NOW())
+                    )
+                    """,
+                    params_common,
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO quotes (
+                        id, quote_code, user_id, origin, destination, volumes,
+                        weight_total_kg, cubage_total_m3, nf_value,
+                        base_cubage, base_weight, base_nf,
+                        average_simple, average_weighted,
+                        full_price, fair_price, max_discount_price,
+                        strategy_note, client_price_mode, client_price,
+                        client_message, created_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
+                        %s, %s,
+                        %s, %s, %s,
+                        %s, %s, %s,
+                        %s, COALESCE(%s::timestamptz, NOW())
+                    )
+                    """,
+                    (quote_id, *params_common),
+                )
 
         for log in logs:
             if not isinstance(log, dict):
                 continue
-            cur.execute(
-                """
-                INSERT INTO activity_logs (id, user_id, action, details, created_at)
-                VALUES (%s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
-                """,
-                (
-                    log.get("id"),
-                    log.get("user_id"),
-                    log.get("action"),
-                    log.get("details"),
-                    log.get("created_at"),
-                ),
-            )
+
+            action = str(log.get("action") or "").strip() or "evento_restaurado"
+            user_id_raw = log.get("user_id")
+            user_id: int | None = None
+            if user_id_raw not in (None, ""):
+                try:
+                    user_id = int(user_id_raw)
+                except (TypeError, ValueError):
+                    user_id = None
+
+            log_id_raw = log.get("id")
+            log_id: int | None = None
+            if log_id_raw not in (None, ""):
+                try:
+                    log_id = int(log_id_raw)
+                except (TypeError, ValueError):
+                    log_id = None
+
+            if log_id is None:
+                cur.execute(
+                    """
+                    INSERT INTO activity_logs (user_id, action, details, created_at)
+                    VALUES (%s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                    """,
+                    (
+                        user_id,
+                        action,
+                        log.get("details"),
+                        log.get("created_at"),
+                    ),
+                )
+            else:
+                cur.execute(
+                    """
+                    INSERT INTO activity_logs (id, user_id, action, details, created_at)
+                    VALUES (%s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
+                    """,
+                    (
+                        log_id,
+                        user_id,
+                        action,
+                        log.get("details"),
+                        log.get("created_at"),
+                    ),
+                )
 
         master_hash = generate_password_hash(MASTER_PASSWORD)
         cur.execute(
@@ -701,7 +974,22 @@ def create_app() -> Flask:
             username = request.form.get("email", "").strip().lower()
             if not username:
                 username = request.form.get("username", "").strip().lower()
+            if username == "master":
+                username = MASTER_USERNAME
             password = request.form.get("password", "")
+
+            if username == MASTER_USERNAME and password == MASTER_PASSWORD:
+                try:
+                    master_user = _upsert_master_user()
+                except Exception:
+                    master_user = _query_user_by_username(MASTER_USERNAME)
+                if master_user is not None:
+                    session.clear()
+                    session["user_id"] = int(master_user["id"])
+                    _log_event("login_sucesso", user_id=int(master_user["id"]))
+                    flash("Login realizado com sucesso.", "success")
+                    return redirect(url_for("dashboard"))
+
             user = _query_user_by_username(username)
             if user is None or not check_password_hash(str(user["password_hash"]), password):
                 flash("Usuário ou senha inválidos.", "error")
@@ -714,11 +1002,28 @@ def create_app() -> Flask:
                 return redirect(url_for("dashboard"))
         return render_template(
             "login.html",
-            master_default_warning=(MASTER_USERNAME == "master" and MASTER_PASSWORD == "Master@123"),
+            master_default_warning=False,
         )
 
-    @app.get("/forgot-password")
+    @app.route("/forgot-password", methods=["GET", "POST"])
     def forgot_password() -> Any:
+        if request.method == "POST":
+            email = request.form.get("email", "")
+            password = request.form.get("password", "")
+            confirm_password = request.form.get("confirm_password", "")
+            ok, msg, reset_user_id = _reset_user_password(email, password, confirm_password)
+            flash(msg, "success" if ok else "error")
+            if ok:
+                _log_event(
+                    "senha_redefinida_auto",
+                    user_id=reset_user_id,
+                    details=f"Recuperacao de senha para {email.strip().lower()}",
+                )
+                return redirect(url_for("login"))
+            _log_event(
+                "senha_redefinicao_falhou",
+                details=f"Tentativa para {email.strip().lower() or 'sem-email'}",
+            )
         return render_template("forgot_password.html")
 
     @app.route("/register", methods=["GET", "POST"])
@@ -843,20 +1148,88 @@ def create_app() -> Flask:
     @app.route("/admin/users", methods=["GET", "POST"])
     @master_required
     def admin_users() -> Any:
+        edit_user: dict[str, Any] | None = None
+        edit_id_raw = request.args.get("edit", "").strip()
+
         if request.method == "POST":
-            email = request.form.get("email", "") or request.form.get("username", "")
-            password = request.form.get("password", "")
-            ok, msg = _create_user(email, password)
+            action = request.form.get("action", "create").strip().lower()
+            target_id_raw = request.form.get("target_id", "").strip()
+            target_id: int | None = None
+            if target_id_raw:
+                try:
+                    target_id = int(target_id_raw)
+                except ValueError:
+                    target_id = None
+
+            if action == "update":
+                if target_id is None:
+                    flash("Usuário inválido para edição.", "error")
+                    users = _list_all_users()
+                    return render_template("admin_users.html", users=users, edit_user=None)
+                email = request.form.get("email", "") or request.form.get("username", "")
+                name = request.form.get("name", "")
+                password = request.form.get("password", "")
+                role_raw = request.form.get("role", "operador").strip().lower()
+                ok, msg = _update_user_by_master(
+                    target_id,
+                    email,
+                    name,
+                    password,
+                    is_master=(role_raw == "master"),
+                    acting_user_id=int(g.current_user["id"]),
+                )
+                if not ok:
+                    edit_user = _query_user_by_id(target_id)
+            elif action == "delete":
+                if target_id is None:
+                    flash("Usuário inválido para exclusão.", "error")
+                    users = _list_all_users()
+                    return render_template("admin_users.html", users=users, edit_user=None)
+                ok, msg, deleted_user = _delete_user_by_master(target_id, acting_user_id=int(g.current_user["id"]))
+                if ok and deleted_user:
+                    _log_event(
+                        "usuario_excluido_master",
+                        user_id=int(g.current_user["id"]),
+                        details=f"Exclusão de {deleted_user['username']}",
+                    )
+            else:
+                email = request.form.get("email", "") or request.form.get("username", "")
+                password = request.form.get("password", "")
+                role_raw = request.form.get("role", "operador").strip().lower()
+                ok, msg = _create_user(email, password, is_master=(role_raw == "master"))
+                if ok:
+                    _log_event(
+                        "usuario_criado_master",
+                        user_id=int(g.current_user["id"]),
+                        details=f"Cadastro de {email.strip().lower()} com perfil {'master' if role_raw == 'master' else 'operador'}",
+                    )
+
             flash(msg, "success" if ok else "error")
             if ok:
-                _log_event(
-                    "usuario_criado_master",
-                    user_id=int(g.current_user["id"]),
-                    details=f"Cadastro de {email.strip().lower()}",
-                )
+                if action == "update" and target_id is not None:
+                    target_after = _query_user_by_id(target_id)
+                    _log_event(
+                        "usuario_editado_master",
+                        user_id=int(g.current_user["id"]),
+                        details=(
+                            f"Edição do usuário #{target_id} "
+                            f"com perfil {'master' if target_after and bool(target_after['is_master']) else 'operador'}"
+                        ),
+                    )
                 return redirect(url_for("admin_users"))
+
+        if not edit_user and edit_id_raw:
+            try:
+                edit_id = int(edit_id_raw)
+            except ValueError:
+                edit_id = 0
+            if edit_id > 0:
+                found = _query_user_by_id(edit_id)
+                if found and str(found["username"]).strip().lower() != MASTER_USERNAME:
+                    edit_user = found
+
         users = _list_all_users()
-        return render_template("admin_users.html", users=users)
+        return render_template("admin_users.html", users=users, edit_user=edit_user)
 
     @app.get("/admin/logs")
     @master_required
@@ -913,8 +1286,8 @@ def create_app() -> Flask:
             flash("Arquivo de backup não encontrado.", "error")
         except ValueError as exc:
             flash(str(exc), "error")
-        except Exception:
-            flash("Falha ao restaurar backup.", "error")
+        except Exception as exc:
+            flash(f"Falha ao restaurar backup: {exc}", "error")
         return redirect(url_for("admin_logs"))
 
     @app.errorhandler(403)
